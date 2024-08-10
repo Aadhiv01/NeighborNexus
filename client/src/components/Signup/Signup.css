@@ -1,0 +1,24 @@
+.parent {
+  position: relative;
+}
+
+.center-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.signup-card {
+  padding: 1.6vmin;
+  border-radius: 1vmin;
+  font-weight: 500;
+  background-color: rgba(0, 0, 0, 0.74);
+  box-shadow: 0 0.5rem 1rem rgba(57, 56, 56, 0.259);
+  color: white;
+  width: 40vw;
+}
+
+.input {
+  background-color: rgba(0, 0, 0, 0.74);
+}
