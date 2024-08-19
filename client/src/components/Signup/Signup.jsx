@@ -3,10 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Password } from "primereact/password";
+import { Dropdown } from "primereact/dropdown"; // Importing Dropdown
 import { Divider } from "primereact/divider";
 import { Card } from "primereact/card";
 import { Ripple } from "primereact/ripple";
-
 import "./Signup.css";
 import Header from "../Header/Header";
 import AuthContext from "../../contexts/AuthContext";
@@ -40,11 +40,16 @@ export default function SignUp() {
     lastName: "",
     email: "",
     password: "",
-    type: "user",
+    type: "Community Member",
   });
 
   const navigate = useNavigate();
   const { signup, loading, error } = useContext(AuthContext);
+
+  const userTypes = [
+    { label: "Community Member", value: "Community Member" },
+    { label: "Service Provider", value: "Service Provider" },
+  ];
 
   /**
    * useEffect hook to check if the passwords match whenever they change.
@@ -214,19 +219,40 @@ export default function SignUp() {
                 )}
               </div>
             </div>
+            <div className="p-field" style={{ marginBottom: "8vh" }}>
+              <span className="p-float-label" style={{ paddingTop: "10px" }}>
+                <Dropdown
+                  id="userType"
+                  panelClassName="dropdown-panel"
+                  value={credentials.type}
+                  options={userTypes}
+                  onChange={(e) =>
+                    setCredentials({ ...credentials, type: e.value })
+                  }
+                  required
+                />
+                <label
+                  htmlFor="userType"
+                  className="text-white text-base"
+                  style={{
+                    marginBottom: "5px",
+                  }}
+                >
+                  Select User Type
+                </label>
+              </span>
+            </div>
             <div>
               <Button
                 type="submit"
                 label="Sign Up"
                 className="p-ripple p-mt-3 p-w-full bg-blue-600 text-white font-bold hover:bg-blue-500"
                 style={{ height: "6vh" }}
-                loading={loading} // Show loading state when signing up
+                loading={loading}
               />
               <Ripple />
             </div>
-            {error && <p className="text-red-500">{error}</p>}{" "}
-            {/* Display error message if any */}
-            <Divider />
+            {error && <p className="text-red-500">{error}</p>} <Divider />
             <p className="signup-link text-white font-medium">
               Existing User?{" "}
               <Link to="/login" className="hover:text-blue-600">
