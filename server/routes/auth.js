@@ -44,6 +44,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
 const User = require('../models/User');
+const ServiceProvider = require('../models/ServiceProvider');
 const authenticateToken = require('../middleware/auth');
 
 // @route   POST api/auth
@@ -96,6 +97,7 @@ router.post(
     check('lastName', 'Last name is required').not().isEmpty(),
     check('email', 'Please include a valid email').isEmail(),
     check('password', 'Please enter a password with 8 or more characters').isLength({ min: 8 }),
+    check('type', 'User type is required').not().isEmpty(),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -122,15 +124,33 @@ router.post(
 
       await user.save();
 
+      // If the user is a service provider, create a ServiceProvider document
+      if (type.toLowerCase() === 'service provider') {
+        const serviceProvider = new ServiceProvider({
+          userId: user.id,
+          services: [],
+          availability: [],
+          rating: 0,
+          bio: '',
+          experience: 0,
+          contactInfo: {
+            phone: '',
+            email: user.email
+          }
+        });
+
+        await serviceProvider.save();
+      }
+
       const payload = {
         user: {
-          id: user.id,
+          id: user._id,
         },
       };
 
       jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
         if (err) throw err;
-        res.json({ token, user: { id: user.id, name, email } });
+        res.json({ token, user: { id: user._id, name, email, type } });
       });
     } catch (err) {
       console.error(err.message);
@@ -146,4 +166,3 @@ router.get('/verify-token', authenticateToken, (req, res) => {
 });
 
 module.exports = router;
-
