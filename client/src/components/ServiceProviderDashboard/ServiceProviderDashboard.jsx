@@ -19,9 +19,9 @@ const ServiceProviderDashboard = () => {
   const [hovered, setHovered] = useState(false);
   const { user, isLoading } = useUser();
 
-  if(!user)
+  if(isLoading || !user)
     return (
-      <div className="card">
+      <div className="flex justify-center items-center h-screen w-screen">
         <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" fill="var(--surface-ground)" animationDuration=".5s" />
       </div>
     )

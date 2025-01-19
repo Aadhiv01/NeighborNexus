@@ -1,142 +1,117 @@
-import React, { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Password } from "primereact/password";
 import { Divider } from "primereact/divider";
 import { Card } from "primereact/card";
 import { Ripple } from "primereact/ripple";
-
-import "./Login.css";
 import Header from "../Header/Header";
-import AuthContext from "../../contexts/AuthContext";
+import { useLogin } from "../../hooks/useAuth";
+import "./Login.css";
 
-/**
- * Copyright Component
- * Displays a copyright notice at the bottom of the page.
- */
 function Copyright(props) {
   return (
-    <p style={{ textAlign: "center", marginTop: "1rem" }} {...props}>
+    <p className="text-white text-center mt-4" {...props}>
       {"Copyright © "}
-      <a
-        href="https://mui.com"
-        className="p-link"
-        style={{ textDecoration: "none" }}
-      >
-        NeighborNexus
-      </a>{" "}
-      {new Date().getFullYear()}
+      <span className="p-link">NeighborNexus</span> {new Date().getFullYear()}
       {"."}
     </p>
   );
 }
 
-/**
- * Login Component
- * Renders the login form and handles user authentication.
- */
 export default function Login() {
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
   });
+  const login = useLogin();
 
-  const navigate = useNavigate();
-  const { login, loading, error } = useContext(AuthContext);
-
-  /**
-   * Handles form submission for login.
-   * @param {Event} event - The form submission event.
-   */
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (credentials.email && credentials.password) {
-      await login(credentials);
-      console.log("Submitted Login");
-    }
+    login.mutate(credentials);
   };
 
   return (
-    <div className="parent">
+    <div>
       <Header />
-      <div className="flex justify-center items-center h-screen">
+      <div style={{ marginTop: "12vh", display: "flex", justifyContent: "center" }}>
         <Card
-          title="LOGIN"
+          title={<div className="text-center text-[#2D3047]">LOGIN</div>}
+          className="w-11/12 md:w-2/5 p-4 bg-opacity-90 backdrop-blur-sm"
           style={{
-            width: "40vw",
-            padding: "2vmin",
+            zIndex: 10,
           }}
-          className="login-card"
         >
-          <form
-            onSubmit={handleSubmit}
-            className="p-fluid"
-            style={{ marginTop: "5vh" }}
-          >
-            <div className="p-field" style={{ marginBottom: "8vh" }}>
+          <form onSubmit={handleSubmit} className="p-fluid mt-8">
+            <div className="mb-8">
               <span className="p-float-label">
                 <InputText
                   id="email"
                   type="email"
                   value={credentials.email}
-                  className="input"
-                  style={{ border: "0.8px solid gray", padding: "1.2vmin" }}
+                  className="bg-opacity-75 border-2 border-white/20"
+                  style={{
+                    borderBottomColor: "#419D78",
+                    boxShadow: "none",
+                    padding: "1.2rem",
+                  }}
                   onChange={(e) =>
                     setCredentials({ ...credentials, email: e.target.value })
                   }
                   required
                 />
-                <label htmlFor="email" className="text-white">
+                <label htmlFor="email" className="text-black">
                   Email Address
                 </label>
               </span>
             </div>
-            <div className="p-field" style={{ marginBottom: "10vh" }}>
+            <div className="mb-8">
               <span className="p-float-label">
                 <Password
                   id="password"
                   value={credentials.password}
                   feedback={false}
-                  className="input"
+                  className="bg-opacity-75 border-2 border-white/20 border-b-[#419D78]"
                   inputStyle={{
-                    padding: "1.2vmin",
-                    backgroundColor: "rgba(0, 0, 0, 0.74)",
+                    padding: "1.2rem",
+                    boxShadow: "none"
                   }}
-                  style={{ border: "0.8px solid gray" }}
                   onChange={(e) =>
                     setCredentials({ ...credentials, password: e.target.value })
                   }
                   toggleMask
                   required
                 />
-                <label htmlFor="password" className="text-white">
+                <label htmlFor="password" className="text-black">
                   Password
                 </label>
               </span>
             </div>
-            <div>
-              <Button
-                type="submit"
-                label="Login"
-                className="p-ripple p-mt-3 p-w-full bg-blue-600 text-white font-bold hover:bg-blue-500"
-                style={{ height: "6vh" }}
-                loading={loading} // Show a loading state when logging in
-              />
-              <Ripple />
-            </div>
-            {error && <p className="text-red-500">{error}</p>}{" "}
-            {/* Display error message if any */}
-            <Divider />
-            <p className="login-link text-white font-medium">
+            <Button
+              type="submit"
+              label="Login"
+              className="p-ripple h-14 bg-[#419D78] hover:bg-[#357d61] text-white font-bold"
+              loading={login.isLoading}
+            />
+            <Ripple />
+            {login.isError && (
+              <div className="text-red-500 mt-4">
+                Error: {login.error.message}
+              </div>
+            )}
+            <Divider className="my-4 bg-white/20" />
+            <p className="text-center text-black">
               New User?{" "}
-              <Link to="/signup" className="hover:text-blue-600">
+              <Link
+                to="/signup"
+                className="text-[#419D78] hover:text-[#357d61] font-medium"
+              >
                 Sign Up
               </Link>
             </p>
           </form>
-          <Copyright className="p-mt-5" />
+          <Copyright />
         </Card>
       </div>
     </div>

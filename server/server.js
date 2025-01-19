@@ -12,11 +12,11 @@ app.use(express.json());
 
 // Import Routes
 const authRoutes = require('./routes/auth');
-// const taskRoutes = require('./routes/tasks');
+const serviceProviderRoutes = require('./routes/serviceprovider');
 
 // Routes Middleware
 app.use('/api/auth', authRoutes);
-// app.use('/api/tasks', taskRoutes);
+app.use('/api/serviceprovider/services', serviceProviderRoutes);
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
