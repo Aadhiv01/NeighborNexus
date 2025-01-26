@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Password } from "primereact/password";
@@ -7,9 +8,10 @@ import { Dropdown } from "primereact/dropdown"; // Importing Dropdown
 import { Divider } from "primereact/divider";
 import { Card } from "primereact/card";
 import { Ripple } from "primereact/ripple";
-import "./Signup.css";
+
 import Header from "../Header/Header";
-import AuthContext from "../../contexts/AuthContext";
+import { useSignup } from "../../hooks/useAuth";
+import "./Signup.css";
 
 /**
  * Copyright Component
@@ -43,8 +45,11 @@ export default function SignUp() {
     type: "Community Member",
   });
 
-  const navigate = useNavigate();
-  const { signup, loading, error } = useContext(AuthContext);
+  const signup = useSignup();
+
+  // useEffect(() => {
+  //   dispatch(verifyTokenAsync());
+  // }, [dispatch]);
 
   const userTypes = [
     { label: "Community Member", value: "Community Member" },
@@ -68,7 +73,7 @@ export default function SignUp() {
    * Handles form submission for signup.
    * @param {Event} event - The form submission event.
    */
-  const handleSubmit = async (event) => {
+  const handleSubmit = (event) => {
     event.preventDefault();
 
     if (credentials.password !== confirmPassword) {
@@ -79,7 +84,7 @@ export default function SignUp() {
     setPasswordMismatch(false);
 
     if (!passwordMismatch) {
-      await signup(credentials);
+      signup.mutate(credentials);
       console.log("Submitted SignUp");
     }
   };
@@ -111,7 +116,7 @@ export default function SignUp() {
                     id="firstName"
                     value={credentials.firstName}
                     className="input"
-                    style={{ border: "0.8px solid gray", padding: "1.2vmin" }}
+                    style={{ padding: "1.2vmin" }}
                     onChange={(e) =>
                       setCredentials({
                         ...credentials,
@@ -132,7 +137,7 @@ export default function SignUp() {
                     id="lastName"
                     value={credentials.lastName}
                     className="input"
-                    style={{ border: "0.8px solid gray", padding: "1.2vmin" }}
+                    style={{ padding: "1.2vmin" }}
                     onChange={(e) =>
                       setCredentials({
                         ...credentials,
@@ -154,7 +159,7 @@ export default function SignUp() {
                   type="email"
                   value={credentials.email}
                   className="input"
-                  style={{ border: "0.8px solid gray", padding: "1.2vmin" }}
+                  style={{ padding: "1.2vmin" }}
                   onChange={(e) =>
                     setCredentials({ ...credentials, email: e.target.value })
                   }
@@ -248,11 +253,12 @@ export default function SignUp() {
                 label="Sign Up"
                 className="p-ripple p-mt-3 p-w-full bg-blue-600 text-white font-bold hover:bg-blue-500"
                 style={{ height: "6vh" }}
-                loading={loading}
+                loading={signup.isLoading}
               />
               <Ripple />
             </div>
-            {error && <p className="text-red-500">{error}</p>} <Divider />
+            {signup.isError && <p className="text-red-500">{signup.isError}</p>}{" "}
+            <Divider />
             <p className="signup-link text-white font-medium">
               Existing User?{" "}
               <Link to="/login" className="hover:text-blue-600">

@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-.App {
+/* .App {
   text-align: center;
   background-image: url("./images/background.jpg");
   background-repeat: no-repeat;
@@ -66,4 +66,4 @@
   to {
     transform: rotate(360deg);
   }
-}
+} */

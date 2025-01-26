@@ -1,0 +1,53 @@
+/* Override PrimeReact Card default styles */
+.p-card {
+    background: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Override card content background */
+.p-card .p-card-content {
+    background: rgba(255, 255, 255, 0.4) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Override card title/header */
+.p-card .p-card-title,
+.p-card .p-card-header {
+    background: rgba(255, 255, 255, 0.4) !important;
+    color: #ffffff !important;
+}
+
+/* Override card body */
+.p-card .p-card-body {
+    background: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Add hover effects */
+.p-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(31, 38, 135, 0.47) !important;
+    transition: all 0.3s ease;
+}
+
+/* Dialog specific card overrides */
+.sp-edit-profile-dialog .p-card {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Make sure text inputs and labels are visible */
+.sp-edit-profile-dialog .field label {
+    color: #ffffff !important;
+}
+
+.sp-edit-profile-dialog .p-inputtext {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.sp-edit-profile-dialog .p-inputtext:focus {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2) !important;
+}

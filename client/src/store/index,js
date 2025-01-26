@@ -1,0 +1,16 @@
+import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './authSlice';
+
+const store = configureStore({
+  reducer: {
+    auth: authReducer,
+    // Add other reducers here if you have any
+  },
+  // The following line is not needed as configureStore includes thunk by default
+  // middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(thunk),
+});
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+
+export default store;

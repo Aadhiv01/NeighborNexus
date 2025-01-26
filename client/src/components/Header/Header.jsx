@@ -1,23 +1,53 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Avatar } from "primereact/avatar";
 import Button from "@mui/material/Button";
-import "./Header.css"; // Ensure this file contains styles for .hide_on_responsive and .underLine2
-import AuthContext from "../../contexts/AuthContext";
+
+import { useUser } from "../../contexts/UserContext.js";
+import "./Header.css";
+import { useLogout } from '../../hooks/useAuth';
 
 const Header = () => {
-  const { user, logout, loading } = useContext(AuthContext); // Extract user, logout function, and loading state
-  const navigate = useNavigate(); // Hook for programmatic navigation
+  const navigate = useNavigate();
+  const { user, isLoading } = useUser();
+  const logout = useLogout();
+
+  // useEffect(() => {
+  //   const verifyToken = async () => {
+  //     const token = localStorage.getItem('token');
+  //     if (token) {
+  //       try {
+  //         const response = await axiosInstance.get('/auth/verify-token', {
+  //           headers: { Authorization: `Bearer ${token}` }
+  //         });
+  //         dispatch(setUser(response.data.user));
+  //         if (response.data.user.type === 'Community Member') {
+  //           navigate('/dashboard/member');
+  //         } else {
+  //           navigate('/dashboard/serviceprovider');
+  //         }
+  //       } catch (err) {
+  //         localStorage.removeItem('token');
+  //         dispatch(setError('Token verification failed'));
+  //       }
+  //     }
+  //   };
+
+  //   verifyToken();
+  // }, [dispatch, navigate]);
+
+  // useEffect(() => {
+  //   dispatch(verifyTokenAsync());
+  // }, [dispatch]);
 
   // Display a loading message while authentication state is loading
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  // if (loading) {
+  //   return <div>Loading...</div>;
+  // }
 
   // Handle user logout and redirect to login page
   const handleLogout = () => {
-    logout(); // Call the logout function
-    navigate("/login"); // Redirect to login page
+    logout();
   };
 
   // Render navigation items based on user type and authentication status
@@ -126,10 +156,10 @@ const Header = () => {
             <Button color="inherit">BOOKINGS</Button>
           </NavLink>
           <NavLink
-            to="/dashboard/serviceprovider/events"
+            to="/dashboard/serviceprovider/availability"
             className="underLine2 hide_on_responsive text-white"
           >
-            <Button color="inherit">EVENTS</Button>
+            <Button color="inherit">AVAILABILITY</Button>
           </NavLink>
           <NavLink
             to="/dashboard/serviceprovider/profile"
@@ -173,7 +203,7 @@ const Header = () => {
             )
           }
         >
-          <strong style={{ fontSize: "1.4rem" }}>
+          <strong style={{ fontSize: "1.4rem", color: "white" }}>
             <span className="p-d-flex p-jc-center p-mb-3">
               <Avatar icon="pi pi-home" style={{ background: "none" }} />
             </span>

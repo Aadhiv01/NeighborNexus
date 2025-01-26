@@ -1,0 +1,177 @@
+.sp-services-page {
+    min-height: 100vh;
+  }
+  
+.sp-manage-container {
+    padding: 40px;
+    max-width: 1400px;
+    margin: 80px auto 0;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+  }
+  
+  .sp-services-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+  
+  .sp-add-service-card,
+  .sp-services-list-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .sp-add-service-card:hover,
+  .sp-services-list-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(31, 38, 135, 0.5);
+  }
+  
+  .sp-add-service-card .p-card-title,
+  .sp-services-list-card .p-card-title {
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 600;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .service-input {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 8px;
+    color: #ffffff;
+    padding: 12px;
+    margin-bottom: 16px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .service-input:focus {
+    background-color: rgba(255, 255, 255, 0.3);
+    outline: none;
+  }
+  
+  .sp-add-service-card label {
+    color: #ffffff;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+  }
+  
+  .p-button-success {
+    background: linear-gradient(45deg, #11998e, #38ef7d);
+    border: none;
+    border-radius: 8px;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 12px 24px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .p-button-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(56, 239, 125, 0.4);
+  }
+  
+  .sp-services-table {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  
+  .sp-services-table .p-datatable {
+    background-color: transparent !important;
+  }
+  
+  .sp-services-table .p-datatable-thead > tr > th {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    padding: 16px;
+    border: none;
+  }
+  
+  .sp-services-table .p-datatable-tbody > tr {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    transition: background-color 0.3s ease, border 0.2s ease;
+  }
+  
+  .sp-services-table .p-datatable-tbody > tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+  }
+  
+  .sp-services-table .p-datatable-tbody > tr > td {
+    color: #ffffff !important;
+    padding: 16px;
+    border: none;
+  }
+  
+  .sp-services-table .p-datatable-tbody > tr:hover {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+  }
+  
+  /* Ensure text is visible in input fields within the table */
+  .sp-services-table .p-inputtext {
+    color: #333;
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+  
+  /* Style for the action buttons in the table */
+  .sp-services-table .p-button-rounded {
+    background-color: rgba(0, 122, 217, 0.8);
+    color: #ffffff;
+  }
+  
+  .sp-services-table .p-button-rounded:hover {
+    background-color: rgba(0, 122, 217, 1);
+  }
+  
+  .sp-services-table .p-button-rounded.p-button-warning {
+    background-color: rgba(255, 152, 0, 0.8);
+  }
+  
+  .sp-services-table .p-button-rounded.p-button-warning:hover {
+    background-color: rgba(255, 152, 0, 1);
+  }
+  
+  .sp-services-table .p-button-rounded.p-button-danger {
+    background-color: rgba(244, 67, 54, 0.8);
+  }
+  
+  .sp-services-table .p-button-rounded.p-button-danger:hover {
+    background-color: rgba(244, 67, 54, 1);
+  }
+  
+  .p-button-rounded {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin: 0 4px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .p-button-rounded:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .p-button-warning {
+    background: linear-gradient(45deg, #ff8f00, #ffca28);
+  }
+  
+  .p-button-danger {
+    background: linear-gradient(45deg, #ff3d00, #ff8a80);
+  }
+  
+  @media (max-width: 1024px) {
+    .sp-services-layout {
+      grid-template-columns: 1fr;
+    }
+  }
