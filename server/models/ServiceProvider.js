@@ -1,48 +1,97 @@
 const mongoose = require('mongoose');
 
-// Availability Schema
-const AvailabilitySchema = new mongoose.Schema({
-    day: { type: String, required: true },
-    slots: [{ start: String, end: String }] // e.g., [{ start: '09:00', end: '10:00' }]
-});
+const AvailabilitySchema = new mongoose.Schema(
+  {
+    day: {
+      type: String,
+      required: true,
+      lowercase: true,
+      enum: [
+        'sunday',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+      ],
+    },
+    slots: {
+      type: [{ start: String, end: String }],
+      default: [],
+    },
+  },
+  { _id: false }
+);
 
-// Review Schema
-const ReviewSchema = new mongoose.Schema({
-    customer: { type: String, required: true },
-    comment: { type: String, required: true },
-    rating: { type: Number, required: true, min: 1, max: 5 }
-});
+const ReviewSchema = new mongoose.Schema(
+  {
+    customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    comment: { type: String, required: true, maxlength: 2000 },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+  },
+  { timestamps: true }
+);
 
-// Service Schema
 const ServiceSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    category: { type: String, required: true },
-    description: { type: String },
-    price: { type: Number, required: true }
+  name: { type: String, required: true, trim: true },
+  category: { type: String, required: true, trim: true },
+  description: { type: String, default: '', maxlength: 2000 },
+  price: { type: Number, required: true, min: 0 },
+  durationMinutes: { type: Number, default: 60, min: 15 },
 });
 
-// Main ServiceProvider Schema
-const ServiceProviderSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    name: { type: String, required: true },
-    profilePicture: { type: String, default: 'https://cdn1.iconfinder.com/data/icons/avatars-1-5/136/87-512.png' },
-    bio: { type: String },
-    experience: { type: Number }, // Years in the industry
-    services: [ServiceSchema], // Array of services offered
-    availability: [AvailabilitySchema], // Array of availability slots
-    rating: { type: Number, default: 0 }, // Overall rating
-    reviews: [ReviewSchema], // Array of client reviews
-    socialLinks: { // Social media links
-        facebook: { type: String },
-        twitter: { type: String },
-        linkedin: { type: String }
+const ServiceProviderSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      unique: true,
+    },
+    name: { type: String, required: true, trim: true },
+    profilePicture: {
+      type: String,
+      default:
+        'https://cdn1.iconfinder.com/data/icons/avatars-1-5/136/87-512.png',
+    },
+    bio: { type: String, default: '', maxlength: 2000 },
+    experience: { type: Number, default: 0, min: 0 },
+    services: { type: [ServiceSchema], default: [] },
+    availability: { type: [AvailabilitySchema], default: [] },
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    reviews: { type: [ReviewSchema], default: [] },
+    socialLinks: {
+      facebook: String,
+      twitter: String,
+      linkedin: String,
     },
     contactInfo: {
-        phone: { type: String },
-        email: { type: String }
+      phone: String,
+      email: String,
     },
-    location: { type: String }, // Service area (e.g., Greater Toronto Area)
-    availableForEmergency: { type: Boolean, default: false } // Emergency service flag
-});
+    location: { type: String, trim: true },
+    availableForEmergency: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('ServiceProvider', ServiceProviderSchema, 'serviceprovider');
+// Recompute a provider's average rating from its reviews.
+ServiceProviderSchema.methods.recalculateRating = function recalculateRating() {
+  if (!this.reviews.length) {
+    this.rating = 0;
+    return this.rating;
+  }
+  const total = this.reviews.reduce((sum, r) => sum + r.rating, 0);
+  this.rating = Math.round((total / this.reviews.length) * 10) / 10;
+  return this.rating;
+};
+
+ServiceProviderSchema.index({ location: 1 });
+ServiceProviderSchema.index({ 'services.category': 1 });
+
+module.exports = mongoose.model(
+  'ServiceProvider',
+  ServiceProviderSchema,
+  'serviceprovider'
+);

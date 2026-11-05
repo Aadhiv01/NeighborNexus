@@ -1,28 +1,42 @@
 import axiosInstance from './axios-client.js';
 
+const idOf = (service) => service._id || service.id;
+
 export const serviceApi = {
-  // Fetch services from the server
   fetchServices: async () => {
-    const response = await axiosInstance.get("/serviceprovider/services");
-    return response.data;
+    const { data } = await axiosInstance.get('/serviceprovider/services');
+    return data;
   },
 
-  // Add a new service
-  addService: async (newService) => {
-    const response = await axiosInstance.post("/serviceprovider/services", newService);
-    console.log("Response in servicesApi: ", response.data);
-    return response.data;
+  addService: async ({ name, category, description, price, durationMinutes }) => {
+    const { data } = await axiosInstance.post('/serviceprovider/services', {
+      name,
+      category,
+      description,
+      price: Number(price),
+      durationMinutes: Number(durationMinutes) || 60,
+    });
+    return data;
   },
 
-  // Edit an existing service
-  editService: async (updatedService) => {
-    const response = await axiosInstance.put(`/serviceprovider/services/${updatedService.id}`, updatedService);
-    return response.data;
+  editService: async (service) => {
+    const { data } = await axiosInstance.put(
+      `/serviceprovider/services/${idOf(service)}`,
+      {
+        name: service.name,
+        category: service.category,
+        description: service.description,
+        price: Number(service.price),
+        durationMinutes: Number(service.durationMinutes) || 60,
+      }
+    );
+    return data;
   },
 
-  // Delete a service
-  deleteService: async (serviceId) => {
-    const response = await axiosInstance.delete(`/serviceprovider/services/${serviceId}`);
-    return response.data;
-  }
+  deleteService: async (service) => {
+    const { data } = await axiosInstance.delete(
+      `/serviceprovider/services/${idOf(service)}`
+    );
+    return data;
+  },
 };

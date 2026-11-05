@@ -1,11 +1,35 @@
 import React, { useContext, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Avatar } from "primereact/avatar";
-import Button from "@mui/material/Button";
 
-import { useUser } from "../../contexts/UserContext.js";
+import { useUser } from "../../contexts/UserContext.jsx";
 import "./Header.css";
 import { useLogout } from '../../hooks/useAuth';
+
+/**
+ * Local nav button. This used to be MUI's Button, which pulled three
+ * packages into the bundle to render text inside a <button>.
+ */
+const Button = ({ children, variant, color, style, ...rest }) => (
+  <button
+    type="button"
+    className="nn-nav-btn"
+    style={{
+      background: "none",
+      color: "inherit",
+      cursor: "pointer",
+      font: "inherit",
+      letterSpacing: "0.04em",
+      border: variant === "outlined" ? "1.4px solid #d83838" : "none",
+      borderRadius: "4px",
+      padding: "0.4rem 0.8rem",
+      ...style,
+    }}
+    {...rest}
+  >
+    {children}
+  </button>
+);
 
 const Header = () => {
   const navigate = useNavigate();
@@ -63,18 +87,6 @@ const Header = () => {
             <Button color="inherit">SERVICES</Button>
           </NavLink>
           <NavLink
-            to="/about"
-            className="underLine2 hide_on_responsive text-white"
-          >
-            <Button color="inherit">ABOUT</Button>
-          </NavLink>
-          <NavLink
-            to="/contact"
-            className="underLine2 hide_on_responsive text-white"
-          >
-            <Button color="inherit">CONTACT</Button>
-          </NavLink>
-          <NavLink
             to="/signup"
             className="underLine2 hide_on_responsive text-white"
           >
@@ -109,16 +121,10 @@ const Header = () => {
             <Button color="inherit">SERVICES</Button>
           </NavLink>
           <NavLink
-            to="/community"
+            to="/bookings"
             className="underLine2 hide_on_responsive text-white"
           >
-            <Button color="inherit">COMMUNITY</Button>
-          </NavLink>
-          <NavLink
-            to="/profile"
-            className="underLine2 hide_on_responsive text-white"
-          >
-            <Button color="inherit">PROFILE</Button>
+            <Button color="inherit">MY BOOKINGS</Button>
           </NavLink>
           <NavLink className="underLine2">
             <Button
@@ -197,9 +203,9 @@ const Header = () => {
             navigate(
               user
                 ? `/dashboard/${
-                    user.type === "Community Member" ? "member" : "provider"
+                    user.type === "Community Member" ? "member" : "serviceprovider"
                   }`
-                : "/"
+                : "/services"
             )
           }
         >

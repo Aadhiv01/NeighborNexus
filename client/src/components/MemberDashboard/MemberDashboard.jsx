@@ -1,23 +1,24 @@
-import React, { useContext } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { Card } from 'primereact/card';
-import { Button } from 'primereact/button';
-import { Avatar } from 'primereact/avatar';
-import { Carousel } from 'primereact/carousel';
-import { useQuery } from 'react-query';
-import { FaStar, FaCalendarAlt } from 'react-icons/fa';
-import axios from "axios";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import { Card } from "primereact/card";
+import { Button } from "primereact/button";
+import { Carousel } from "primereact/carousel";
+import { useQuery } from "@tanstack/react-query";
+import { FaStar, FaCalendarAlt } from "react-icons/fa";
 
-import { ThemeContext } from '../../contexts/ThemeContext';
-import Header from '../Header/Header';
+import axiosInstance from "../../api/axios-client";
+import { useUser } from "../../contexts/UserContext";
+import { formatBookingDate } from "../../utils/date";
+import Header from "../Header/Header";
+import { page } from "../../styles/ui";
 
-const DashboardContainer = styled.div`
-  padding: 2rem;
-  background: ${({ theme }) => theme.bgDark} url('/path/to/background.jpg') no-repeat center/cover;
-  color: ${({ theme }) => theme.textLight};
-  min-height: 100vh;
-  backdrop-filter: blur(10px);
+const GreetingSection = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
 `;
 
 const GlassTile = styled(motion.div)`
@@ -29,6 +30,7 @@ const GlassTile = styled(motion.div)`
   border: 1px solid ${({ theme }) => theme.shadowLight};
   padding: 2rem;
   margin-bottom: 1.5rem;
+  color: ${({ theme }) => theme.textLight};
 `;
 
 const ServiceCarousel = styled(Carousel)`
@@ -44,16 +46,12 @@ const ServiceCarousel = styled(Carousel)`
   }
 `;
 
-const GreetingSection = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  margin-top: 5vh;
-`;
-
 const IconButton = styled(Button)`
-  background: linear-gradient(145deg, ${({ theme }) => theme.primary}, ${({ theme }) => theme.secondary});
+  background: linear-gradient(
+    145deg,
+    ${({ theme }) => theme.primary},
+    ${({ theme }) => theme.secondary}
+  );
   box-shadow: 0px 4px 15px ${({ theme }) => theme.shadowDark};
   border-radius: 50%;
   width: 50px;
@@ -64,66 +62,131 @@ const IconButton = styled(Button)`
   color: ${({ theme }) => theme.textLight};
 `;
 
-const fetchServices = async () => {
-  const { data } = await axios.get('/api/services/recommended');
+const fetchProviders = async () => {
+  const { data } = await axiosInstance.get("/serviceprovider");
   return data;
 };
 
 const fetchBookings = async () => {
-  const { data } = await axios.get('/api/bookings/upcoming');
+  const { data } = await axiosInstance.get("/bookings");
   return data;
 };
 
-const MemberDashboard = () => {
-  const { theme } = useContext(ThemeContext);
-  const { data: services } = useQuery('services', fetchServices);
-  const { data: bookings } = useQuery('bookings', fetchBookings);
+const priceFrom = (provider) => {
+  const prices = (provider.services || []).map((s) => s.price);
+  return prices.length ? Math.min(...prices) : null;
+};
 
-  const serviceTemplate = (service) => (
-    <Card title={service.name} subTitle={service.category} className="p-card">
-      <p>{service.description}</p>
-      <IconButton icon={<FaStar />} />
-    </Card>
-  );
+const MemberDashboard = () => {
+  const { user } = useUser();
+  const navigate = useNavigate();
+  const { data: providers = [] } = useQuery({
+    queryKey: ["providers"],
+    queryFn: fetchProviders,
+  });
+  const { data: bookings = [] } = useQuery({
+    queryKey: ["bookings"],
+    queryFn: fetchBookings,
+  });
+
+  const upcoming = bookings
+    .filter((b) => b.status === "upcoming")
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const firstName = user?.name?.split(" ")[0] || "there";
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+  const providerTemplate = (provider) => {
+    const from = priceFrom(provider);
+    return (
+      <Card
+        title={provider.name}
+        subTitle={provider.services?.[0]?.category || "Service"}
+        className="p-card"
+        onClick={() => navigate(`/services/${provider.userId}`)}
+        style={{ cursor: "pointer" }}
+      >
+        <p>{provider.bio || "No description yet."}</p>
+        <p style={{ fontWeight: 600 }}>
+          {from != null ? `From $${from}` : "Price on request"}
+        </p>
+        <IconButton icon={<FaStar />} aria-label="Save provider" />
+      </Card>
+    );
+  };
 
   return (
-    <div className='parent'>
+    <div>
       <Header />
+      <div style={page}>
       <GreetingSection>
         <div>
-          <h1>Good Evening, John!</h1>
-          <p>Here’s what’s happening today.</p>
+          <h1 style={{ margin: "0 0 0.25rem", fontSize: "1.7rem" }}>
+            {greeting}, {firstName}!
+          </h1>
+          <p style={{ margin: 0, color: "#aeb4c8" }}>
+            Here’s what’s happening today.
+          </p>
         </div>
       </GreetingSection>
 
-      <GlassTile whileHover={{ scale: 1.05 }}>
+      <GlassTile whileHover={{ scale: 1.02 }}>
         <h2>Next Appointment</h2>
-        {bookings && bookings.length ? (
+        {upcoming.length ? (
           <div>
-            <p>Service: {bookings[0].service}</p>
-            <p>Date: {bookings[0].date}</p>
-            <Button label="View All" className="p-button-secondary" />
+            <p>
+              Provider: {upcoming[0].serviceProviderId?.name || "—"}
+            </p>
+            <p>
+              Date: {formatBookingDate(upcoming[0].date)} at{" "}
+              {upcoming[0].startTime}
+            </p>
+            <Button
+              label="View All"
+              className="p-button-secondary"
+              onClick={() => navigate("/bookings")}
+            />
           </div>
         ) : (
-          <p>No upcoming appointments.</p>
+          <div>
+            <p>No upcoming appointments.</p>
+            <Button
+              label="Find a provider"
+              className="p-button-secondary"
+              onClick={() => navigate("/services")}
+            />
+          </div>
         )}
       </GlassTile>
 
-      <GlassTile whileHover={{ scale: 1.05 }}>
+      <GlassTile whileHover={{ scale: 1.02 }}>
         <h2>Popular Services</h2>
-        <ServiceCarousel value={services} itemTemplate={serviceTemplate} numVisible={3} />
+        {providers.length ? (
+          <ServiceCarousel
+            value={providers}
+            itemTemplate={providerTemplate}
+            numVisible={3}
+            numScroll={1}
+          />
+        ) : (
+          <p>No providers yet. Run `npm run seed` in the repo root.</p>
+        )}
       </GlassTile>
 
-      <GlassTile whileHover={{ scale: 1.05 }}>
+      <GlassTile whileHover={{ scale: 1.02 }}>
         <h2>Community News</h2>
         <p>No new announcements.</p>
       </GlassTile>
 
       <IconButton
         icon={<FaCalendarAlt />}
-        onClick={() => console.log('Redirect to Booking Page')}
-        style={{ position: 'fixed', bottom: '2rem', right: '2rem' }}
+        aria-label="Book a service"
+        onClick={() => navigate("/services")}
+        style={{ position: "fixed", bottom: "2rem", right: "2rem" }}
       />
+      </div>
     </div>
   );
 };

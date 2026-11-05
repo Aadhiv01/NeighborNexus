@@ -27,7 +27,7 @@
     z-index: -1;
   }
   
-  .content {
+  .sp-content {
     position: relative;
     z-index: 1;
     padding: 2rem;
@@ -57,7 +57,7 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
   
-  .p-card:hover {
+  .sp-dashboard .p-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
   }
@@ -85,7 +85,8 @@
     display: flex;
     align-items: center;
     padding: 1rem;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 10px;
   }
   

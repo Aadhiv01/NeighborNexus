@@ -1,25 +1,30 @@
-import React, { useContext } from "react";
+import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import AuthContext from "../../contexts/AuthContext";
+import { useUser } from "../../contexts/UserContext";
 
 /**
- * ProtectedRoute Component
- * Ensures that only authenticated users can access certain routes.
- * If the user is not authenticated, they will be redirected to the login page.
+ * Guards nested routes. UserContext is the single source of truth for
+ * who is signed in — nothing else should duplicate that state.
+ *
+ *   <Route element={<ProtectedRoute />}>                       // any user
+ *   <Route element={<ProtectedRoute roles={["Service Provider"]} />}>
  */
-const ProtectedRoute = () => {
-    const { user, loading } = useContext(AuthContext);
+const ProtectedRoute = ({ roles }) => {
+  const { user, isLoading } = useUser();
 
-    // Debugging: log the user state and loading status
-    console.log('ProtectedRoute user:', user);
-    console.log('ProtectedRoute loading:', loading);
-  
-    // Redirect to login if not authenticated and not loading
-    if (loading) {
-      return <div>Loading...</div>; // Optionally, show a loading spinner or message
-    }
-  
-    return user ? <Outlet /> : <Navigate to="/login" replace />;
+  if (isLoading) {
+    return <div style={{ padding: "2rem" }}>Loading…</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (roles && !roles.includes(user.type)) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
 };
 
 export default ProtectedRoute;
