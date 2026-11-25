@@ -1,5 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { api, qk, type ProviderSearch } from "../lib/api";
 import type { Provider } from "../lib/types";
 import Page from "../layout/Page";
@@ -32,8 +33,10 @@ const SORTERS: Record<Sort, (a: Provider, b: Provider) => number> = {
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 export default function Discover() {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("");
+  // The landing page hands over a search with ?q= and ?category=.
+  const [params] = useSearchParams();
+  const [query, setQuery] = useState(params.get("q") ?? "");
+  const [category, setCategory] = useState(params.get("category") ?? "");
   const [location, setLocation] = useState("");
   const [sortChoice, setSortChoice] = useState<Sort | null>(null);
   const [view, setView] = useState<View>("list");
