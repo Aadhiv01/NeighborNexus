@@ -4,14 +4,14 @@
  *
  *   npm run seed
  */
-require('dotenv').config();
+require('../lib/config');
 
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const User = require('../models/User');
-const ServiceProvider = require('../models/ServiceProvider');
-const Booking = require('../models/Booking');
+const User = require('../modules/users/user.model');
+const ServiceProvider = require('../modules/providers/provider.model');
+const Booking = require('../modules/bookings/booking.model');
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/NeighborNexus';
 

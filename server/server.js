@@ -1,24 +1,32 @@
-require('dotenv').config();
-
+const config = require('./lib/config');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
+const pinoHttp = require('pino-http');
 
-const authRoutes = require('./routes/auth');
-const serviceProviderRoutes = require('./routes/serviceprovider');
-const bookingRoutes = require('./routes/booking');
+const logger = require('./lib/logger');
+const authRoutes = require('./modules/auth/auth.routes');
+const providerRoutes = require('./modules/providers/provider.routes');
+const bookingRoutes = require('./modules/bookings/booking.routes');
 
 const app = express();
 
-const PORT = process.env.PORT || 4000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/NeighborNexus';
-const CORS_ORIGIN = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-  : ['http://localhost:3000'];
-
+app.use(
+  pinoHttp({
+    logger,
+    autoLogging: { ignore: (req) => req.url === '/health' },
+    // Log the essentials only: no headers, no tokens.
+    serializers: {
+      req: (req) => ({ method: req.method, url: req.url }),
+      res: (res) => ({ statusCode: res.statusCode }),
+    },
+    customSuccessMessage: (req, res) => `${req.method} ${req.originalUrl} ${res.statusCode}`,
+    customErrorMessage: (req, res) => `${req.method} ${req.originalUrl} ${res.statusCode}`,
+  })
+);
 app.use(helmet());
-app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
+app.use(cors({ origin: config.corsOrigins, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/health', (req, res) => {
@@ -30,45 +38,43 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api/serviceprovider', serviceProviderRoutes);
+app.use('/api/serviceprovider', providerRoutes);
 app.use('/api/bookings', bookingRoutes);
 
-// 404 for anything unmatched
 app.use((req, res) => {
   res.status(404).json({ msg: 'Not found' });
 });
 
-// Central error handler. Every route can just `throw` or call next(err).
+// Central error handler. Express 5 forwards rejected promises here, so routes just throw.
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   // Duplicate key from the booking unique index = someone took the slot first.
   if (err.code === 11000) {
     return res.status(409).json({ msg: 'That slot was just booked. Pick another.' });
   }
-  console.error(err);
-  res.status(err.status || 500).json({ msg: err.message || 'Server error' });
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ msg: 'Request body is not valid JSON' });
+  }
+  const status = err.status || 500;
+  if (status >= 500) req.log.error({ err }, 'request failed');
+  res.status(status).json({ msg: status >= 500 ? 'Server error' : err.message });
 });
 
 async function start() {
-  if (!process.env.JWT_SECRET) {
-    console.warn('[warn] JWT_SECRET is not set. Falling back to an insecure default.');
-    process.env.JWT_SECRET = 'insecure-dev-secret-change-me';
-  }
-
   try {
-    await mongoose.connect(MONGO_URI);
-    console.log(`Database connected: ${mongoose.connection.name}`);
+    await mongoose.connect(config.MONGO_URI);
+    logger.info(`Database connected: ${mongoose.connection.name}`);
   } catch (err) {
-    console.error('Database connection failed:', err.message);
+    logger.fatal({ err }, 'Database connection failed');
     process.exit(1);
   }
 
-  const server = app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  const server = app.listen(config.PORT, () => {
+    logger.info(`Server running on http://localhost:${config.PORT}`);
   });
 
-  const shutdown = async (signal) => {
-    console.log(`\n${signal} received, shutting down.`);
+  const shutdown = (signal) => {
+    logger.info(`${signal} received, shutting down.`);
     server.close(async () => {
       await mongoose.connection.close();
       process.exit(0);
