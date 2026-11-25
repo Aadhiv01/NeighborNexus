@@ -9,6 +9,12 @@ const schema = z.object({
   MONGO_URI: z.string().min(1).default('mongodb://127.0.0.1:27017/NeighborNexus'),
   JWT_SECRET: z.string().min(1).optional(),
   CORS_ORIGIN: z.string().default('http://localhost:3001'),
+  // Email is optional. Without SMTP_URL, messages are built and logged but never sent.
+  SMTP_URL: z.string().optional(),
+  MAIL_FROM: z.string().default('NeighborNexus <no-reply@neighbornexus.local>'),
+  APP_URL: z.string().default('http://localhost:3001'),
+  // Set REMINDERS=off to stop this process from sending reminders (for example on a second instance).
+  REMINDERS: z.enum(['on', 'off']).default('on'),
 });
 
 const env = schema.parse(process.env);

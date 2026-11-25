@@ -9,6 +9,8 @@ const logger = require('./lib/logger');
 const authRoutes = require('./modules/auth/auth.routes');
 const providerRoutes = require('./modules/providers/provider.routes');
 const bookingRoutes = require('./modules/bookings/booking.routes');
+const notificationRoutes = require('./modules/notifications/notification.routes');
+const { sendDueReminders } = require('./modules/notifications/reminders');
 
 const app = express();
 
@@ -40,6 +42,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/serviceprovider', providerRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ msg: 'Not found' });
@@ -73,8 +76,19 @@ async function start() {
     logger.info(`Server running on http://localhost:${config.PORT}`);
   });
 
+  // Reminders: check every minute. Each booking is claimed atomically, so running this on
+  // several instances is safe, and REMINDERS=off turns it off for an instance.
+  let reminderTimer;
+  if (config.REMINDERS === 'on') {
+    const run = () => sendDueReminders().catch((err) => logger.error({ err }, 'reminder run failed'));
+    run();
+    reminderTimer = setInterval(run, 60 * 1000);
+    reminderTimer.unref();
+  }
+
   const shutdown = (signal) => {
     logger.info(`${signal} received, shutting down.`);
+    clearInterval(reminderTimer);
     server.close(async () => {
       await mongoose.connection.close();
       process.exit(0);

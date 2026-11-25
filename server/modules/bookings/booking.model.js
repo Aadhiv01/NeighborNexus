@@ -40,6 +40,8 @@ const BookingSchema = new mongoose.Schema(
       type: [{ date: Date, startTime: String, endTime: String, at: Date, _id: false }],
       default: [],
     },
+    // Set once the reminder has gone out. Cleared by a reschedule so a new reminder is sent.
+    reminderSentAt: { type: Date },
   },
   { timestamps: true }
 );

@@ -6,6 +6,7 @@ const ServiceProvider = require('./provider.model');
 const Booking = require('../bookings/booking.model');
 const { toMinutes, startOfDayUTC, localISO, nextOpenSlot } = require('../bookings/slots');
 const schemas = require('./provider.schemas');
+const { notifyBooking } = require('../notifications/notify');
 
 const router = express.Router();
 
@@ -236,6 +237,8 @@ router.put(
 
     booking.status = req.valid.body.status;
     await booking.save();
+    if (booking.status === 'canceled') notifyBooking(booking, 'canceled', { by: 'provider' });
+    if (booking.status === 'completed') notifyBooking(booking, 'completed');
     return res.json(booking);
   }
 );

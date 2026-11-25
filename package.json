@@ -2,14 +2,16 @@
   "name": "neighbornexus",
   "version": "1.0.0",
   "private": true,
-  "description": "NeighborNexus API \u2014 a marketplace connecting community members with local service providers",
+  "description": "NeighborNexus API — a marketplace connecting community members with local service providers",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
     "dev": "node --watch server/server.js",
     "seed": "node server/scripts/seed.js",
     "smoke": "node server/scripts/smoke.js",
-    "test": "node --test \"server/test/*.test.js\""
+    "test": "node --test \"server/test/*.test.js\"",
+    "reminders": "node server/scripts/reminders.js",
+    "check:reminders": "node server/scripts/check-reminders.js"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +25,7 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.13.1",
+    "nodemailer": "^10.6.1",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
     "zod": "^4.6.7"

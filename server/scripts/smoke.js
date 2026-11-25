@@ -215,7 +215,7 @@ async function main() {
   });
   check('member cannot edit another profile', badProfile.status === 403);
 
-  // ── reschedule ──────────────────────────────────────
+  // ── reschedule and notifications ──────────────────────────────────────
   {
     const when = await findOpenDate(provider._id, serviceId);
     const day = when.date;
@@ -224,6 +224,7 @@ async function main() {
     const slots = await list();
     const [s0, s1] = slots;
     const last = slots[slots.length - 1];
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const reschedule = (id, body, token = memberToken) =>
       api(`/api/bookings/${id}/reschedule`, { method: 'POST', token, body });
 
@@ -266,8 +267,23 @@ async function main() {
     check('moving to a past date is rejected', (await reschedule(id, { date: localDay(yesterday), startTime: s0.start, endTime: s0.end })).status === 400);
     check('moving to a different length is rejected', (await reschedule(id, { date: day, startTime: s0.start, endTime: '23:59' })).status === 400);
 
+    await wait(400); // notifications are sent after the response
+    const inbox = await api('/api/notifications', { token: provTok });
+    const types = (inbox.data.items || []).map((n) => n.type);
+    check('the provider is notified of the new booking and the move', types.includes('booking_created') && types.includes('booking_rescheduled'));
+    check('the inbox reports an unread count', inbox.data.unread >= 2);
+
+    const target = inbox.data.items[0];
+    check('a member cannot mark a provider\'s notification read', (await api(`/api/notifications/${target._id}/read`, { method: 'PUT', token: memberToken })).status === 404);
+    const read = await api(`/api/notifications/${target._id}/read`, { method: 'PUT', token: provTok });
+    check('the owner can mark a notification read', read.status === 200 && !!read.data.readAt);
+    await api('/api/notifications/read-all', { method: 'PUT', token: provTok });
+    check('read-all clears the unread count', (await api('/api/notifications', { token: provTok })).data.unread === 0);
+
     const canceled = await api(`/api/bookings/${id}`, { method: 'DELETE', token: provTok });
-    check('a provider can cancel the booking', canceled.status === 200);
+    await wait(300);
+    const memberInbox = await api('/api/notifications', { token: memberToken });
+    check('a provider canceling notifies the member', canceled.status === 200 && memberInbox.data.items.some((n) => n.type === 'booking_canceled'));
     await api(`/api/bookings/${sams.data._id}`, { method: 'DELETE', token: samTok });
   }
 

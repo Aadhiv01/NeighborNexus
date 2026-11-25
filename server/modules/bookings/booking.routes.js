@@ -6,6 +6,8 @@ const Booking = require('./booking.model');
 const ServiceProvider = require('../providers/provider.model');
 const { startOfDayUTC, slotsForDay, toMinutes, localISO, dropPastSlots } = require('./slots');
 const schemas = require('./booking.schemas');
+const { notifyBooking } = require('../notifications/notify');
+const { formatDate, formatTime } = require('../../lib/format');
 
 const router = express.Router();
 
@@ -104,6 +106,7 @@ router.post('/', authenticate, validate({ body: schemas.create }), async (req, r
     endTime,
   });
 
+  notifyBooking(booking, 'created');
   return res.status(201).json(booking);
 });
 
@@ -171,6 +174,8 @@ router.put(
     if (status === 'completed' && timeSpent != null) booking.timeSpent = timeSpent;
 
     await booking.save();
+    if (status === 'canceled') notifyBooking(booking, 'canceled', { by: isOwner ? 'member' : 'provider' });
+    if (status === 'completed') notifyBooking(booking, 'completed');
     return res.json(booking);
   }
 );
@@ -224,13 +229,16 @@ router.post(
       return res.status(409).json({ msg: 'That time is not available for this provider' });
     }
 
+    const was = `${formatDate(booking.date)} at ${formatTime(booking.startTime)}`;
     booking.reschedules.push({ date: booking.date, startTime: booking.startTime, endTime: booking.endTime, at: new Date() });
     booking.date = day;
     booking.startTime = startTime;
     booking.endTime = endTime;
+    booking.reminderSentAt = undefined;
     // The unique index decides a race: if someone took the slot meanwhile this fails with a 409.
     await booking.save();
 
+    notifyBooking(booking, 'rescheduled', { was });
     return res.json(booking);
   }
 );
@@ -250,6 +258,7 @@ router.delete('/:id', authenticate, validate({ params: schemas.idParam }), async
   booking.status = 'canceled';
   await booking.save();
 
+  notifyBooking(booking, 'canceled', { by: isOwner ? 'member' : 'provider' });
   return res.json({ msg: 'Booking canceled', booking });
 });
 
