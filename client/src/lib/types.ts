@@ -129,6 +129,12 @@ export interface ServiceInput {
   durationMinutes: number;
 }
 
+export interface Stats {
+  providers: number;
+  categories: { name: string; providers: number; minPrice: number; avgPrice: number; maxPrice: number }[];
+  openings: { date: string; slots: number; providers: number }[];
+}
+
 export type NotificationType =
   | "booking_created"
   | "booking_canceled"

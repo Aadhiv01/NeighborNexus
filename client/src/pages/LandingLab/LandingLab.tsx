@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api, qk } from "../../lib/api";
+import { usePageTitle } from "../../layout/Page";
 import { useThemeSettings } from "../../theme/themeStore";
-import Page from "../../layout/Page";
 import { Segmented } from "../../ui/Display";
 import { Button } from "../../ui/Button";
 import { useToast } from "../../ui/Feedback";
@@ -25,7 +25,9 @@ export default function LandingLab() {
   const [concept, setConcept] = useState<Concept>(load);
   const [settings] = useThemeSettings();
   const toast = useToast();
+  usePageTitle("Landing lab");
   const { data = [], isPending } = useQuery({ queryKey: qk.providerList({}), queryFn: () => api.providers() });
+  const { data: stats } = useQuery({ queryKey: qk.stats, queryFn: api.stats });
 
   const pick = (c: Concept) => {
     setConcept(c);
@@ -41,7 +43,7 @@ export default function LandingLab() {
     }
   };
 
-  const props = { providers: data, loading: isPending };
+  const props = { providers: data, stats, loading: isPending };
   return (
     <>
       <div className="sticky top-[57px] z-30 border-b border-line bg-bg/95 backdrop-blur">
@@ -61,11 +63,9 @@ export default function LandingLab() {
           <Button size="sm" className="ml-auto" onClick={copy}>Copy my pick</Button>
         </div>
       </div>
-      <Page title="Landing lab" wide>
-        {concept === "editorial" && <EditorialConcept {...props} />}
-        {concept === "board" && <LiveBoardConcept {...props} />}
-        {concept === "street" && <StreetConcept {...props} />}
-      </Page>
+      {concept === "editorial" && <EditorialConcept {...props} />}
+      {concept === "board" && <LiveBoardConcept {...props} />}
+      {concept === "street" && <StreetConcept {...props} />}
     </>
   );
 }

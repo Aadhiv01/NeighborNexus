@@ -11,6 +11,7 @@ import type {
   ServiceInput,
   Slot,
   SlotsResponse,
+  Stats,
   User,
   Weekday,
 } from "./types";
@@ -44,6 +45,7 @@ export function errorMessage(err: unknown, fallback = "Something went wrong. Ple
 /** Query keys in one place so invalidation can't drift from the queries. */
 export const qk = {
   user: ["user"] as const,
+  stats: ["stats"] as const,
   providers: ["providers"] as const,
   providerList: (params: ProviderSearch) => ["providers", params] as const,
   provider: (userId: string) => ["provider", userId] as const,
@@ -101,6 +103,8 @@ export const api = {
   publicProfile: (userId: string) => get<Provider>(`/serviceprovider/profile/${userId}`),
   slots: (serviceProviderId: string, serviceId: string, date: string, excludeBookingId?: string) =>
     get<SlotsResponse>("/bookings/slots", { serviceProviderId, serviceId, date, excludeBookingId }),
+
+  stats: () => get<Stats>("/stats"),
 
   // member bookings
   createBooking: async (body: {

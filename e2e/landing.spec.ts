@@ -54,6 +54,33 @@ test.describe("landing lab", () => {
     await expect(page.getByRole("link", { name: "View times" })).toBeVisible();
   });
 
+  test("the charts are drawn from the real numbers in the database", async ({ page }) => {
+    await page.goto("/lab/landing");
+    await expect(page.getByText("Open times each day, across all providers").first()).toBeVisible();
+    await expect(page.locator("figure ol li")).toHaveCount(7);
+    // Maya is the only plumber: her two services are $120 and $180, so the average is $150.
+    await expect(page.getByText("average $150")).toBeVisible();
+    await expect(page.getByText("$120", { exact: true }).first()).toBeVisible();
+  });
+
+  test("the scroll-driven steps change their picture as you read", async ({ page }) => {
+    await page.goto("/lab/landing");
+    await page.getByRole("heading", { name: "Book, and change your mind" }).scrollIntoViewIfNeeded();
+    await expect(page.getByText("Booked ✓").filter({ visible: true })).toBeVisible();
+    await page.getByRole("heading", { name: "Find someone nearby" }).scrollIntoViewIfNeeded();
+    await expect(page.getByText("leaking tap").filter({ visible: true })).toBeVisible();
+  });
+
+  test("the questions open and close", async ({ page }) => {
+    await page.goto("/lab/landing");
+    const q = page.getByText("Do I pay through the app?");
+    await q.scrollIntoViewIfNeeded();
+    await q.click();
+    await expect(page.getByText("Not yet. Each service shows its price")).toBeVisible();
+    await q.click();
+    await expect(page.getByText("Not yet. Each service shows its price")).toBeHidden();
+  });
+
   test("the choice is remembered between visits", async ({ page }) => {
     await page.goto("/lab/landing");
     await page.getByRole("radio", { name: "B · Live board" }).check({ force: true });

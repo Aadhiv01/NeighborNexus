@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
-import type { Provider } from "../../lib/types";
+import type { Provider, Stats } from "../../lib/types";
 import { addDays, describeNext, formatTime, isoDate } from "../../lib/date";
 import { LinkButton } from "../../ui/Button";
-import { Neighbourhood } from "../../ui/Neighbourhood";
 import { EmptyState } from "../../ui/Feedback";
-import { CountUp, ForProviders, HeroSearch, HowItWorks, Promises, categoriesOfAll } from "./parts";
+import { HeroSearch, HowItWorks, categoriesOfAll } from "./parts";
+import { Band, Faq, FinalCta, H2, Kicker, Marquee, Metric, OpeningsChart, ParallaxArt, PriceRanges, ProviderBand, Reveal, StickySteps } from "./blocks";
 
-interface P { providers: Provider[]; loading: boolean }
+interface P { providers: Provider[]; stats?: Stats; loading: boolean }
 
 const NoData = () => (
   <EmptyState title="No live data yet">
@@ -16,41 +16,53 @@ const NoData = () => (
   </EmptyState>
 );
 
-/* ───────── A. Editorial: words first, calm ───────── */
-export function EditorialConcept({ providers }: P) {
-  const cats = categoriesOfAll(providers);
+const totalOpen = (s?: Stats) => s?.openings.reduce((n, o) => n + o.slots, 0) ?? 0;
+const freeToday = (s?: Stats) => s?.openings[0]?.providers ?? 0;
+
+/* ───────── A. The story: scroll it, light and editorial ───────── */
+export function EditorialConcept({ providers, stats }: P) {
+  const cats = stats?.categories.map((c) => c.name) ?? categoriesOfAll(providers);
   return (
     <>
-      <section className="grid grid-cols-1 items-center gap-10 py-10 md:grid-cols-[1.15fr_1fr] md:py-16">
-        <div>
-          <p className="m-0 mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">Local services, booked in a minute</p>
-          <h1 className="m-0 font-display text-5xl font-bold leading-[1.03] tracking-tight md:text-7xl">
-            Good help lives <span className="text-accent">down the street.</span>
-          </h1>
-          <p className="mb-8 mt-5 max-w-[34rem] text-lg leading-relaxed text-ink-soft">
-            Plumbers, cleaners and fixers from your own neighbourhood. See real openings, book in under a minute, and
-            change your mind without a phone call.
-          </p>
-          <HeroSearch categories={cats} />
-        </div>
-        <Neighbourhood className="w-full max-w-[560px] justify-self-center" />
-      </section>
-
-      <dl className="m-0 grid grid-cols-3 gap-4 border-y border-line py-6 text-center">
-        {[
-          [providers.length, "neighbours listed"],
-          [cats.length, "kinds of help"],
-          [providers.filter((p) => p.nextAvailable).length, "free to book this week"],
-        ].map(([n, l]) => (
-          <div key={l as string}>
-            <dd className="m-0 font-display text-4xl font-bold"><CountUp value={n as number} /></dd>
-            <dt className="text-sm text-ink-soft">{l}</dt>
+      <Band label="Welcome" className="overflow-hidden">
+        <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-[1.1fr_1fr]">
+          <div>
+            <Kicker>Local services, booked in a minute</Kicker>
+            <h1 className="m-0 font-display text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
+              Good help lives <span className="text-accent">down the street.</span>
+            </h1>
+            <p className="mb-8 mt-5 max-w-[34rem] text-lg leading-relaxed text-ink-soft">
+              Plumbers, cleaners and fixers from your own neighbourhood. See real openings, book in under a minute, and
+              change your mind without a phone call.
+            </p>
+            <HeroSearch categories={cats} />
           </div>
-        ))}
-      </dl>
-      <HowItWorks />
-      <ForProviders />
-      <Promises />
+          <ParallaxArt className="w-full max-w-[560px] justify-self-center" />
+        </div>
+      </Band>
+      <Marquee items={cats} />
+      <Band tone="tint" label="The neighbourhood in numbers">
+        <Reveal><Kicker>Right now</Kicker><H2>The neighbourhood, in numbers.</H2></Reveal>
+        <div className="mt-12 grid grid-cols-2 gap-8 md:grid-cols-4">
+          <Metric value={stats?.providers ?? providers.length} label="neighbours listed" />
+          <Metric value={cats.length} label="kinds of help" />
+          <Metric value={totalOpen(stats)} label="open times this week" />
+          <Metric value={freeToday(stats)} label="free to book today" />
+        </div>
+        <div className="mt-14 rounded-card bg-surface p-6 md:p-10"><OpeningsChart stats={stats} /></div>
+      </Band>
+      <Band label="How it works">
+        <Reveal><Kicker>How it works</Kicker><H2>Three steps, no phone calls.</H2></Reveal>
+        <div className="mt-14"><StickySteps providers={providers} /></div>
+      </Band>
+      <Band tone="tint" label="Typical prices">
+        <Reveal><Kicker>Know before you book</Kicker><H2>What things cost around here.</H2></Reveal>
+        <p className="mb-10 mt-4 max-w-2xl text-lg text-ink-soft">The bar runs from the lowest to the highest price listed. The dark tick is the average.</p>
+        <PriceRanges stats={stats} />
+      </Band>
+      <ProviderBand />
+      <Band label="Questions"><Reveal><Kicker>Good to know</Kicker><H2>Questions, answered plainly.</H2></Reveal><div className="mt-10"><Faq /></div></Band>
+      <FinalCta />
     </>
   );
 }
@@ -111,36 +123,53 @@ function Timeline({ providers }: { providers: Provider[] }) {
   );
 }
 
-export function LiveBoardConcept({ providers, loading }: P) {
+/* ───────── B. Live board: the data is the hero, dark and bold ───────── */
+export function LiveBoardConcept({ providers, stats, loading }: P) {
+  const cats = stats?.categories.map((c) => c.name) ?? categoriesOfAll(providers);
   const soonest = providers.filter((p) => p.nextAvailable).sort((a, b) => `${a.nextAvailable!.date} ${a.nextAvailable!.start}`.localeCompare(`${b.nextAvailable!.date} ${b.nextAvailable!.start}`))[0];
   return (
     <>
-      <section className="py-10 md:py-14">
-        <p className="m-0 mb-3 inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold">
+      <Band tone="ink" label="Live availability">
+        <p className="m-0 mb-4 inline-flex items-center gap-2 rounded-full border border-bg px-3 py-1 text-xs font-semibold text-bg">
           <span className="nn-motion h-2 w-2 rounded-full bg-good" style={{ animation: "nn-pulse 2s infinite" }} aria-hidden /> Live from the neighbourhood
         </p>
-        <h1 className="m-0 max-w-4xl font-display text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
-          {soonest ? (
-            <>The soonest opening is <span className="text-accent">{describeNext(soonest.nextAvailable!)}</span>.</>
-          ) : (
-            <>See who is free <span className="text-accent">before you call.</span></>
-          )}
+        <h1 className="m-0 max-w-4xl font-display text-5xl font-bold leading-[1.02] tracking-tight text-bg md:text-7xl">
+          {soonest ? (<>The soonest opening is <span className="text-accent-soft">{describeNext(soonest.nextAvailable!)}</span>.</>) : (<>See who is free <span className="text-accent-soft">before you call.</span></>)}
         </h1>
-        <p className="mb-8 mt-4 max-w-2xl text-lg leading-relaxed text-ink-soft">
-          Every dot is a real next free time, taken from each provider's own hours and bookings.
-        </p>
-        <div className="rounded-card border border-line bg-surface p-5 md:p-7">
+        <p className="mb-10 mt-5 max-w-2xl text-lg leading-relaxed text-bg">Every dot is a real next free time, worked out from each provider's own hours and bookings.</p>
+        <div className="rounded-card bg-surface p-5 text-ink md:p-8">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="m-0 font-display text-2xl font-semibold">Next free, over two weeks</h2>
             <span className="text-sm text-ink-soft">Select a name to see their times</span>
           </div>
           {providers.length ? <Timeline providers={providers} /> : loading ? <p className="m-0 text-ink-soft">Loading…</p> : <NoData />}
         </div>
-        <div className="mt-8 max-w-2xl"><HeroSearch categories={categoriesOfAll(providers)} /></div>
-      </section>
-      <HowItWorks />
-      <Promises />
-      <ForProviders />
+        <div className="mt-8 max-w-2xl"><HeroSearch categories={cats} tone="ink" /></div>
+      </Band>
+      <Band label="Openings this week">
+        <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-[1.4fr_1fr]">
+          <Reveal><div className="rounded-card border border-line bg-surface p-6 md:p-8"><OpeningsChart stats={stats} /></div></Reveal>
+          <Reveal delay={0.1}>
+            <Kicker>This week</Kicker>
+            <H2>{totalOpen(stats)} open times, waiting.</H2>
+            <div className="mt-8 grid grid-cols-2 gap-6">
+              <Metric value={stats?.providers ?? providers.length} label="neighbours" />
+              <Metric value={freeToday(stats)} label="free today" />
+            </div>
+          </Reveal>
+        </div>
+      </Band>
+      <Band tone="tint" label="Typical prices">
+        <Reveal><Kicker>Price check</Kicker><H2>The going rate, by kind of help.</H2></Reveal>
+        <div className="mt-10"><PriceRanges stats={stats} /></div>
+      </Band>
+      <Band label="How it works">
+        <Reveal><Kicker>How it works</Kicker><H2>Pick, book, done.</H2></Reveal>
+        <div className="mt-10"><HowItWorks /></div>
+      </Band>
+      <ProviderBand />
+      <Band tone="tint" label="Questions"><Reveal><Kicker>Good to know</Kicker><H2>Questions, answered plainly.</H2></Reveal><div className="mt-10"><Faq /></div></Band>
+      <FinalCta />
     </>
   );
 }
@@ -149,20 +178,21 @@ export function LiveBoardConcept({ providers, loading }: P) {
 const ROOFS = ["var(--accent)", "var(--spark)", "var(--ink)", "var(--accent)", "var(--spark)"];
 const HEIGHTS = [150, 120, 165, 130, 145];
 
-export function StreetConcept({ providers }: P) {
+/* ───────── C. The street: play with it ───────── */
+export function StreetConcept({ providers, stats }: P) {
   const shown = providers.slice(0, 5);
   const [id, setId] = useState<string | null>(null);
   const current = shown.find((p) => p._id === id) ?? shown[0];
+  const cats = stats?.categories.map((c) => c.name) ?? categoriesOfAll(providers);
   return (
     <>
-      <section className="py-10 md:py-14">
-        <h1 className="m-0 max-w-3xl font-display text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
+      <Band tone="tint" label="Providers on the street">
+        <h1 className="m-0 max-w-3xl font-display text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
           Knock on a <span className="text-accent">door</span> near you.
         </h1>
-        <p className="mb-8 mt-4 max-w-2xl text-lg leading-relaxed text-ink-soft">
+        <p className="mb-10 mt-5 max-w-2xl text-lg leading-relaxed text-ink-soft">
           Each house is a real provider in the neighbourhood. Pick one to see what they do and when they are next free.
         </p>
-
         {shown.length ? (
           <div className="rounded-card border border-line bg-surface p-5 md:p-8">
             <div role="group" aria-label="Providers on the street" className="flex items-end justify-center gap-2 border-b-2 border-line pb-0 sm:gap-6">
@@ -209,11 +239,29 @@ export function StreetConcept({ providers }: P) {
         ) : (
           <NoData />
         )}
-        <div className="mt-8 max-w-2xl"><HeroSearch categories={categoriesOfAll(providers)} /></div>
-      </section>
-      <HowItWorks />
-      <ForProviders />
-      <Promises />
+        <div className="mt-8 max-w-2xl"><HeroSearch categories={cats} /></div>
+      </Band>
+      <Band label="In numbers">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+          <Metric value={stats?.providers ?? providers.length} label="neighbours listed" />
+          <Metric value={cats.length} label="kinds of help" />
+          <Metric value={totalOpen(stats)} label="open times this week" />
+          <Metric value={freeToday(stats)} label="free to book today" />
+        </div>
+      </Band>
+      <Band tone="tint" label="How it works">
+        <Reveal><Kicker>How it works</Kicker><H2>Three steps, no phone calls.</H2></Reveal>
+        <div className="mt-10"><HowItWorks /></div>
+      </Band>
+      <Band label="Openings and prices">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
+          <Reveal><Kicker>When</Kicker><h2 className="mb-6 mt-0 font-display text-3xl font-bold">Open times, day by day.</h2><OpeningsChart stats={stats} /></Reveal>
+          <Reveal delay={0.1}><Kicker>How much</Kicker><h2 className="mb-6 mt-0 font-display text-3xl font-bold">What things cost.</h2><PriceRanges stats={stats} /></Reveal>
+        </div>
+      </Band>
+      <ProviderBand />
+      <Band tone="tint" label="Questions"><Reveal><Kicker>Good to know</Kicker><H2>Questions, answered plainly.</H2></Reveal><div className="mt-10"><Faq /></div></Band>
+      <FinalCta />
     </>
   );
 }
