@@ -41,6 +41,25 @@ const ServiceSchema = new mongoose.Schema({
   durationMinutes: { type: Number, default: 60, min: 15 },
 });
 
+// GeoJSON Point as [longitude, latitude]. Optional: providers without one are
+// simply left out of "near me" results. `default: undefined` matters because an
+// empty coordinates array makes the 2dsphere index reject the document.
+const PointSchema = new mongoose.Schema(
+  {
+    type: { type: String, enum: ['Point'], required: true },
+    coordinates: {
+      type: [Number],
+      required: true,
+      validate: {
+        validator: (c) =>
+          c.length === 2 && c[0] >= -180 && c[0] <= 180 && c[1] >= -90 && c[1] <= 90,
+        message: 'coordinates must be [longitude, latitude]',
+      },
+    },
+  },
+  { _id: false }
+);
+
 const ServiceProviderSchema = new mongoose.Schema(
   {
     userId: {
@@ -71,6 +90,7 @@ const ServiceProviderSchema = new mongoose.Schema(
       email: String,
     },
     location: { type: String, trim: true },
+    geo: { type: PointSchema, default: undefined },
     availableForEmergency: { type: Boolean, default: false },
   },
   { timestamps: true }
@@ -88,6 +108,7 @@ ServiceProviderSchema.methods.recalculateRating = function recalculateRating() {
 };
 
 ServiceProviderSchema.index({ location: 1 });
+ServiceProviderSchema.index({ geo: '2dsphere' });
 ServiceProviderSchema.index({ 'services.category': 1 });
 
 module.exports = mongoose.model(

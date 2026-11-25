@@ -65,7 +65,38 @@ function slotsForDay({
   return slots;
 }
 
+/** YYYY-MM-DD for a local calendar date. */
+const localISO = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/**
+ * The first open slot in the next `days` days, or null. `bookingsFor(dateStr)`
+ * returns that day's upcoming bookings. Times are compared in the server's
+ * local time, which assumes providers and the server share a timezone.
+ */
+function nextOpenSlot({ availability = [], durationMinutes = 60, bookingsFor, now = new Date(), days = 14 }) {
+  for (let i = 0; i < days; i += 1) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i);
+    const dateStr = localISO(d);
+    let slots = slotsForDay({
+      availability,
+      date: startOfDayUTC(dateStr),
+      durationMinutes,
+      bookings: bookingsFor(dateStr),
+    });
+    if (i === 0) {
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      slots = slots.filter((s) => toMinutes(s.start) > nowMinutes);
+    }
+    if (slots.length) return { date: dateStr, start: slots[0].start, end: slots[0].end };
+  }
+  return null;
+}
+
 module.exports = {
+  localISO,
+  nextOpenSlot,
   WEEKDAYS,
   toMinutes,
   toHHMM,

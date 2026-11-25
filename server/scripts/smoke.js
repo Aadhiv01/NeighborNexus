@@ -165,6 +165,12 @@ async function main() {
       body: { email: 'maya@example.com', password: 'password123' },
     });
     const providerToken = providerLogin.data.token;
+    const providerBooking = await api('/api/bookings', {
+      method: 'POST',
+      token: providerToken,
+      body: { serviceProviderId: provider._id, serviceId, date, startTime: slot.start, endTime: slot.end },
+    });
+    check('providers cannot book services', providerBooking.status === 403);
     const incoming = await api('/api/serviceprovider/bookings', { token: providerToken });
     check(
       'provider sees incoming bookings',
@@ -208,6 +214,46 @@ async function main() {
     token: memberToken,
   });
   check('member cannot edit another profile', badProfile.status === 403);
+
+  // ── next available and near me ────────────────────────────────────────
+  const withNext = providers.data.filter((p) => p.nextAvailable);
+  check(
+    'discovery includes each provider\'s next open slot',
+    withNext.length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(withNext[0].nextAvailable.date) && !!withNext[0].nextAvailable.start
+  );
+  check('discovery does not expose the full availability template', providers.data.every((p) => p.availability === undefined));
+
+  const near = await api('/api/serviceprovider?lat=43.6532&lng=-79.3832');
+  const dists = (near.data || []).map((p) => p.distanceMeters);
+  check(
+    'near me returns providers nearest first with distances',
+    near.status === 200 && dists.length > 1 && dists.every((d, i) => i === 0 || d >= dists[i - 1])
+  );
+  const radius = await api('/api/serviceprovider?lat=43.6532&lng=-79.3832&radiusKm=10');
+  check(
+    'radius filter drops providers that are too far',
+    radius.status === 200 && radius.data.length > 0 && radius.data.length < near.data.length &&
+      radius.data.every((p) => p.distanceMeters <= 10000)
+  );
+  const badGeo = await api('/api/serviceprovider?lat=43.6');
+  check('lat without lng is rejected', badGeo.status === 400);
+
+  // Stored coordinates are rounded so an exact address is never published.
+  const prov = await api('/api/auth', { method: 'POST', body: { email: 'maya@example.com', password: 'password123' } });
+  const mine = await api('/api/serviceprovider/profile', { token: prov.data.token });
+  const saved = await api(`/api/serviceprovider/profile/${mine.data.userId}`, {
+    method: 'PUT',
+    token: prov.data.token,
+    body: { geo: { lat: 43.653226, lng: -79.383184 } },
+  });
+  check(
+    'saved location is rounded to about 1 km',
+    saved.status === 200 && saved.data.geo?.coordinates?.[0] === -79.38 && saved.data.geo?.coordinates?.[1] === 43.65
+  );
+  const cleared = await api(`/api/serviceprovider/profile/${mine.data.userId}`, {
+    method: 'PUT', token: prov.data.token, body: { geo: null },
+  });
+  check('location can be cleared', cleared.status === 200 && cleared.data.geo === undefined);
 
   console.log(`\n${passed} passed, ${failed} failed`);
   process.exit(failed === 0 ? 0 : 1);

@@ -57,6 +57,7 @@ const PROVIDERS = [
     email: 'maya@example.com',
     bio: 'Licensed plumber with 12 years of residential experience. Emergency callouts available.',
     location: 'Toronto',
+    geo: { type: 'Point', coordinates: [-79.3832, 43.6532] },
     experience: 12,
     availableForEmergency: true,
     services: [
@@ -81,6 +82,7 @@ const PROVIDERS = [
     email: 'daniel@example.com',
     bio: 'Certified electrician. Panel upgrades, EV charger installs, and safety inspections.',
     location: 'North York',
+    geo: { type: 'Point', coordinates: [-79.4112, 43.7615] },
     experience: 8,
     availableForEmergency: false,
     services: [
@@ -105,6 +107,7 @@ const PROVIDERS = [
     email: 'priya@example.com',
     bio: 'Deep cleaning and move-out cleans. Eco-friendly products, 6 years experience.',
     location: 'Scarborough',
+    geo: { type: 'Point', coordinates: [-79.2577, 43.7731] },
     experience: 6,
     availableForEmergency: false,
     services: [
@@ -129,6 +132,7 @@ const PROVIDERS = [
     email: 'tom@example.com',
     bio: 'Furniture assembly, shelving, and small repairs. Weekend availability.',
     location: 'Toronto',
+    geo: { type: 'Point', coordinates: [-79.4512, 43.6532] },
     experience: 4,
     availableForEmergency: false,
     services: [

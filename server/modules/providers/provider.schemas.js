@@ -24,11 +24,16 @@ const availability = z.object({
   ),
 });
 
-const searchQuery = z.object({
-  category: z.string().trim().optional(),
-  location: z.string().trim().optional(),
-  q: z.string().trim().optional(),
-});
+const searchQuery = z
+  .object({
+    category: z.string().trim().optional(),
+    location: z.string().trim().optional(),
+    q: z.string().trim().optional(),
+    lat: z.coerce.number().min(-90).max(90).optional(),
+    lng: z.coerce.number().min(-180).max(180).optional(),
+    radiusKm: z.coerce.number().positive().max(500).optional(),
+  })
+  .refine((v) => (v.lat === undefined) === (v.lng === undefined), 'Send both lat and lng, or neither');
 
 const userIdParam = z.object({ userId: objectId('Invalid user id') });
 const bookingIdParam = z.object({ bookingId: objectId('Invalid booking id') });
@@ -51,6 +56,11 @@ const profile = z.object({
   contactInfo: z.object({ phone: optionalText, email: optionalText }).optional(),
   location: optionalText,
   availableForEmergency: z.boolean().optional(),
+  // null clears the location. Stored as a rounded GeoJSON point (see routes).
+  geo: z
+    .object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) })
+    .nullable()
+    .optional(),
 });
 
 module.exports = {

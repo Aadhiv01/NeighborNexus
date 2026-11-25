@@ -54,6 +54,11 @@ router.get('/slots', validate({ query: schemas.slotsQuery }), async (req, res) =
 
 // POST /api/bookings
 router.post('/', authenticate, validate({ body: schemas.create }), async (req, res) => {
+  // Providers offer services; they don't book them. Enforced here, not only in the UI.
+  if (req.user.type === PROVIDER_TYPE) {
+    return res.status(403).json({ msg: 'Providers can’t book services. Use a member account to book.' });
+  }
+
   const { serviceProviderId, serviceId, date, startTime, endTime } = req.valid.body;
 
   const provider = await ServiceProvider.findById(serviceProviderId).lean();
