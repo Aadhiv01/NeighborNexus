@@ -257,6 +257,7 @@ All routes are prefixed with `/api`.
 | `npm run seed` | Reset and seed demo data |
 | `npm run smoke` | End-to-end API checks against a running API |
 | `npm test` | Unit tests (reminder timing, today and past slots) |
+| `npm run test:e2e` | End-to-end tests in a real browser with axe accessibility checks. They start their own API (4100), client (3002) and `nn_e2e` database. Run `npx playwright install chromium` once first |
 | `npm run check:reminders` | Reminder sending against a real database, including races |
 | `npm run reminders` | Send due reminders once and exit (for cron, when the web process runs with `REMINDERS=off`) |
 | `npm --prefix client run dev` | Client dev server (port 3001) |
