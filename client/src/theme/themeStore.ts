@@ -14,7 +14,7 @@ export interface ThemeSettings {
 
 export const DEFAULTS: ThemeSettings = {
   palette: "paper",
-  type: "modern",
+  type: "editorial",
   mode: "light",
   radius: "soft",
 };

@@ -96,8 +96,8 @@ ok   canceling returns the slot to availability
   is a small in-house kit in `src/ui` (buttons, fields, cards, toasts, donut chart), built on
   semantic HTML. PrimeReact, styled-components, Chart.js and react-icons are gone.
 - **Tailwind v4** with design tokens in `src/theme/theme.css`: palette, type, mode and corners
-  are data attributes on `<html>`. The default look is Paper palette, Schibsted Grotesk and
-  Figtree, light mode, soft corners.
+  are data attributes on `<html>`. The default look is Paper palette, Newsreader and
+  Hanken Grotesk, light mode, soft corners.
 - **TypeScript strict** across the client. API calls and query keys live in `src/lib/api.ts`.
 - **View Transitions**: provider cards morph into the detail page (`<Link viewTransition>`).
 - **Theme lab** at `/lab` (temporary) — try palettes, type pairings, light/dark and

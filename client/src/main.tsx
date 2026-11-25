@@ -2,8 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 
-import "@fontsource-variable/schibsted-grotesk";
-import "@fontsource-variable/figtree";
+import "@fontsource-variable/newsreader";
+import "@fontsource-variable/hanken-grotesk";
 import "./index.css";
 import { applySettings, loadSettings } from "./theme/themeStore";
 import { router } from "./App";
