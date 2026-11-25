@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import { Carousel } from "primereact/carousel";
