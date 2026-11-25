@@ -17,8 +17,9 @@ live availability, book, and manage or cancel the booking. Providers manage
 services, weekly availability, incoming bookings, and their profile — all
 against live data.
 
-The API is covered by an end-to-end smoke test (21 checks), and the browser
-flows for both roles were exercised against the running app.
+The API is covered by a smoke test against the running server, unit tests and a reminder
+check against a real database. The browser flows for both roles have their own end-to-end
+tests with accessibility checks (see Scripts).
 
 ---
 
@@ -58,7 +59,7 @@ Created by `npm run seed`. Password for all: `password123`
 ### Verify it works
 
 ```bash
-npm run smoke     # 21 end-to-end checks against a running API
+npm run smoke     # end-to-end API checks against a running server
 ```
 
 ```
@@ -66,7 +67,7 @@ ok   member can log in
 ok   JWT carries only identity and role
 ok   double-booking the same slot is rejected
 ok   canceling returns the slot to availability
-21 passed, 0 failed
+47 passed, 0 failed
 ```
 
 ---
