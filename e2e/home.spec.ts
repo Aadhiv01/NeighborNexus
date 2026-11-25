@@ -34,7 +34,7 @@ test.describe("the home page, signed out", () => {
     await page.goto("/");
     await page.getByRole("link", { name: "Plumbing" }).first().click();
     await expect(page).toHaveURL(/category=Plumbing/);
-    await expect(page.getByLabel("Category")).toHaveValue("Plumbing");
+    await expect(page.getByRole("combobox", { name: "Category" })).toContainText("Plumbing");
   });
 
   test("the charts are drawn from the real numbers", async ({ page }) => {
@@ -77,6 +77,34 @@ test.describe("the home page, signed out", () => {
       }).length
     );
     expect(moving).toBe(0);
+  });
+
+  test("the header controls share one height and the hero column one width", async ({ page }) => {
+    await page.goto("/");
+    const h = async (loc: ReturnType<typeof page.locator>) => Math.round((await loc.first().boundingBox())!.height);
+    const header = page.locator("header");
+    expect(await h(header.getByRole("link", { name: "NeighborNexus" }))).toBe(36);
+    expect(await h(header.getByRole("link", { name: "Find help" }))).toBe(36);
+    expect(await h(header.getByRole("link", { name: "Log in" }))).toBe(36);
+    expect(await h(header.getByRole("link", { name: "Sign up" }))).toBe(36);
+    // Category chips match the buttons: same height and the same corner radius.
+    const chip = page.getByRole("link", { name: "Plumbing" }).first();
+    const button = header.getByRole("link", { name: "Sign up" });
+    expect(await h(chip)).toBe(36);
+    const radius = (l: typeof chip) => l.evaluate((el) => getComputedStyle(el).borderRadius);
+    expect(await radius(chip)).toBe(await radius(button));
+
+    // The paragraph, the search box and the small print end at the same edge.
+    const right = async (loc: typeof chip) => Math.round((await loc.boundingBox())!.x + (await loc.boundingBox())!.width);
+    const para = page.getByText("Plumbers, cleaners and fixers").first();
+    const form = page.getByRole("search", { name: "Search providers" });
+    const note = page.getByText(/We are just getting started here/);
+    const edges = [await right(form)];
+    for (const el of [para, note]) {
+      const box = await el.evaluate((n) => { const r = (n as HTMLElement).parentElement!.getBoundingClientRect(); return r.right; });
+      edges.push(Math.round(box));
+    }
+    expect(Math.max(...edges) - Math.min(...edges)).toBeLessThanOrEqual(1);
   });
 
   test("the logo goes home and the header offers sign in", async ({ page }) => {

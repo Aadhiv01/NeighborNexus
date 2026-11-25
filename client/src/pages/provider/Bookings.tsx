@@ -58,12 +58,17 @@ export default function ProviderBookings() {
 
       <form onSubmit={(e) => e.preventDefault()} className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1fr_auto] sm:items-end">
         <TextField label="Search member or service" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setVisible(PAGE); }} />
-        <SelectField label="Status" value={status} onChange={(e) => { setStatus(e.target.value as "" | BookingStatus); setVisible(PAGE); }}>
-          <option value="">All statuses</option>
-          <option value="upcoming">Upcoming</option>
-          <option value="completed">Completed</option>
-          <option value="canceled">Canceled</option>
-        </SelectField>
+        <SelectField
+          label="Status"
+          value={status}
+          onValueChange={(v) => { setStatus(v as "" | BookingStatus); setVisible(PAGE); }}
+          options={[
+            { value: "", label: "All statuses" },
+            { value: "upcoming", label: "Upcoming" },
+            { value: "completed", label: "Completed" },
+            { value: "canceled", label: "Canceled" },
+          ]}
+        />
         <Button variant="secondary" size="lg" onClick={() => setNewestFirst((n) => !n)} aria-pressed={newestFirst}>
           {newestFirst ? "Newest first" : "Oldest first"}
         </Button>

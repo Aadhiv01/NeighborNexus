@@ -41,6 +41,9 @@ export const ArrowRightIcon = (p: P) => (
 export const ArrowLeftIcon = (p: P) => (
   <svg {...base(p)}><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
 );
+export const ChevronDownIcon = (p: P) => (
+  <svg {...base(p)}><path d="m6 9 6 6 6-6" /></svg>
+);
 export const MenuIcon = (p: P) => (
   <svg {...base(p)}><path d="M4 7h16M4 12h16M4 17h16" /></svg>
 );

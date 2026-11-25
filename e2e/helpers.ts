@@ -13,13 +13,18 @@ export async function logInThroughTheForm(page: Page, email: string, password = 
 }
 
 /** Fails with a readable list if axe finds any accessibility violation on the current page. */
-export async function expectNoAxeViolations(page: Page, label: string) {
+export async function expectNoAxeViolations(page: Page, label: string, options: { popupOpen?: boolean } = {}) {
   // Pages fade in even with reduced motion (only movement is removed). Axe must not measure
   // colours halfway through, so wait until the page content is fully opaque.
   await page.waitForFunction(() =>
     [...document.querySelectorAll("main > div, main li")].every((el) => getComputedStyle(el).opacity === "1")
   );
-  const { violations } = await new AxeBuilder({ page }).analyze();
+  // An open dropdown list is attached to the end of the page, outside any landmark. Axe's "region"
+  // rule is a best-practice hint, not a failure of the list, and moving the list into <main>
+  // breaks it. Every other rule still applies.
+  const builder = new AxeBuilder({ page });
+  if (options.popupOpen) builder.disableRules(["region"]);
+  const { violations } = await builder.analyze();
   const summary = violations.map((v) => `${v.id} (${v.nodes.length}): ${v.nodes[0]?.target.join(" ")}`);
   expect(summary, `axe violations on ${label}`).toEqual([]);
 }
@@ -36,6 +41,12 @@ export async function chooseDayWithSlots(page: Page, name: string, min = 2, from
     if ((await page.locator(`input[name="${name}-slot"]`).count()) >= min) return i;
   }
   throw new Error("No day with open times in the next two weeks. Is the seed data loaded?");
+}
+
+/** Opens the themed dropdown with this label and picks an option, the way a person would. */
+export async function chooseOption(page: Page, label: string, option: string) {
+  await page.getByRole("combobox", { name: label }).click();
+  await page.getByRole("option", { name: option, exact: true }).click();
 }
 
 export const toastRegion = (page: Page) => page.getByRole("region", { name: "Notifications" });

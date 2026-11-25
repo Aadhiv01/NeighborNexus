@@ -205,9 +205,9 @@ export function StickySteps({ providers }: { providers: Provider[] }) {
   }, []);
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-[1fr_1fr] md:gap-16">
-      <ol className="m-0 grid list-none gap-6 p-0 md:gap-[28vh]">
+      <ol className="m-0 grid list-none gap-6 p-0 md:gap-[16vh]">
         {STEPS.map((s, i) => (
-          <li key={s.title} ref={(el) => { refs.current[i] = el; }} data-step={i} className={`border-l-4 pl-6 transition-colors duration-300 md:min-h-[30vh] ${active === i ? "border-accent" : "border-line"}`}>
+          <li key={s.title} ref={(el) => { refs.current[i] = el; }} data-step={i} className={`border-l-4 pl-6 transition-colors duration-300 md:min-h-[22vh] ${active === i ? "border-accent" : "border-line"}`}>
             <span className="grid h-12 w-12 place-items-center rounded-full bg-accent font-display text-xl font-bold text-accent-ink" aria-hidden>{i + 1}</span>
             <h3 className="mb-0 mt-4 font-display text-3xl font-bold">{s.title}</h3>
             <p className="mb-0 mt-2 max-w-md text-lg leading-relaxed text-ink-soft">{s.text}</p>
@@ -302,7 +302,7 @@ export function FinalCta() {
 export function FoundingNote({ count, tone = "plain" }: { count: number; tone?: "plain" | "ink" }) {
   if (count >= 25) return null;
   return (
-    <p className={`mb-0 mt-5 max-w-xl text-sm leading-relaxed ${tone === "ink" ? "text-bg" : "text-ink-soft"}`}>
+    <p className={`mb-0 mt-5 text-sm leading-relaxed ${tone === "ink" ? "text-bg" : "text-ink-soft"}`}>
       We are just getting started here, with {count} {count === 1 ? "neighbour" : "neighbours"} listed so far. Every number on this
       page is live from the database, and anything we cannot back up is left out.
     </p>

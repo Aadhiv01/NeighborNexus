@@ -19,19 +19,19 @@ function Landing({ providers, stats }: { providers: Provider[]; stats?: Stats })
     <>
       <Band label="Welcome" className="overflow-hidden">
         <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-[1.1fr_1fr]">
-          <div>
+          <div className="max-w-[38rem]">
             <Kicker>Local services, booked in a minute</Kicker>
             <h1 className="m-0 font-display text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
               Good help lives <span className="text-accent">down the street.</span>
             </h1>
-            <p className="mb-8 mt-5 max-w-[34rem] text-lg leading-relaxed text-ink-soft">
+            <p className="mb-8 mt-5 text-lg leading-relaxed text-ink-soft">
               Plumbers, cleaners and fixers from your own neighbourhood. See real openings, book in under a minute, and
               change your mind without a phone call.
             </p>
             <HeroSearch categories={cats} />
             <FoundingNote count={stats?.providers ?? providers.length} />
           </div>
-          <Neighbourhood className="w-full max-w-[560px] justify-self-center" />
+          <Neighbourhood className="w-full max-w-[560px] justify-self-end" />
         </div>
       </Band>
       <Band tone="tint" label="The neighbourhood in numbers">

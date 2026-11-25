@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { chooseOption, expectNoAxeViolations } from "./helpers";
 
 test.describe("discovery", () => {
   test("every card says when that provider is next free", async ({ page }) => {
@@ -10,7 +11,7 @@ test.describe("discovery", () => {
   test("filters narrow the list and Clear brings it back", async ({ page }) => {
     await page.goto("/services");
     await expect(page.locator("ul li h2")).toHaveCount(4);
-    await page.getByLabel("Category").selectOption("Plumbing");
+    await chooseOption(page, "Category", "Plumbing");
     await expect(page.locator("ul li h2")).toHaveCount(1);
     await page.getByRole("button", { name: "Clear" }).click();
     await expect(page.locator("ul li h2")).toHaveCount(4);
@@ -18,8 +19,42 @@ test.describe("discovery", () => {
 
   test("sorting offers soonest, price and rating", async ({ page }) => {
     await page.goto("/services");
-    await page.getByLabel("Sort by").selectOption("price");
+    await chooseOption(page, "Sort by", "Lowest price");
     await expect(page.locator("ul li h2").first()).toHaveText("Tom Alvarez"); // cheapest from $70
+  });
+});
+
+test.describe("dropdowns", () => {
+  test("are themed, not the browser's plain list", async ({ page }) => {
+    await page.goto("/services");
+    await expect(page.locator("select")).toHaveCount(0);
+    const trigger = page.getByRole("combobox", { name: "Sort by" });
+    // Same height as the search fields and large buttons, and the same soft corners.
+    const box = await trigger.boundingBox();
+    expect(Math.round(box!.height)).toBe(48);
+    await trigger.click();
+    await expect(page.getByRole("option", { name: "Soonest available" })).toBeVisible();
+    await expectNoAxeViolations(page, "an open dropdown", { popupOpen: true });
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("option", { name: "Soonest available" })).toHaveCount(0);
+  });
+
+  test("work with the keyboard alone", async ({ page }) => {
+    await page.goto("/services");
+    const trigger = page.getByRole("combobox", { name: "Sort by" });
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await expect(trigger).toContainText("Lowest price");
+    await expect(page.locator("ul li h2").first()).toHaveText("Tom Alvarez");
+  });
+
+  test("show which option is chosen", async ({ page }) => {
+    await page.goto("/services");
+    await page.getByRole("combobox", { name: "Category" }).click();
+    await expect(page.getByRole("option", { name: "All categories" })).toHaveAttribute("aria-selected", "true");
   });
 });
 
@@ -33,7 +68,7 @@ test.describe("near me and the map", () => {
     await expect(page.getByText(/(km|m) away/)).toHaveCount(4);
     expect(await page.locator("ul li h2").allInnerTexts()).toEqual(["Maya Chen", "Tom Alvarez", "Daniel Okafor", "Priya Raman"]);
 
-    await page.getByLabel("Within").selectOption("10");
+    await chooseOption(page, "Within", "10 km");
     await expect(page.locator("ul li h2")).toHaveCount(2);
   });
 

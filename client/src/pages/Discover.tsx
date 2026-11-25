@@ -138,12 +138,12 @@ export default function Discover() {
           />
           <SearchIcon className="pointer-events-none absolute bottom-3 left-3 text-ink-soft" />
         </div>
-        <SelectField label="Category" value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">All categories</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </SelectField>
+        <SelectField
+          label="Category"
+          value={category}
+          onValueChange={setCategory}
+          options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c, label: c }))]}
+        />
         <TextField label="Area" placeholder="Neighbourhood or city" value={location} onChange={(e) => setLocation(e.target.value)} />
         <Button variant="secondary" size="lg" disabled={!filtering} onClick={reset}>
           Clear
@@ -156,24 +156,36 @@ export default function Discover() {
             <Button variant="secondary" onClick={clearHere} icon={<PinIcon width={18} height={18} />}>
               Near you · clear
             </Button>
-            <SelectField label="Within" value={radius} onChange={(e) => setRadius(e.target.value)} className="min-w-[8.5rem]">
-              <option value="">Any distance</option>
-              <option value="5">5 km</option>
-              <option value="10">10 km</option>
-              <option value="25">25 km</option>
-            </SelectField>
+            <SelectField
+              label="Within"
+              value={radius}
+              onValueChange={setRadius}
+              className="min-w-[10rem]"
+              options={[
+                { value: "", label: "Any distance" },
+                { value: "5", label: "5 km" },
+                { value: "10", label: "10 km" },
+                { value: "25", label: "25 km" },
+              ]}
+            />
           </>
         ) : (
           <Button variant="secondary" loading={geo === "asking"} onClick={locate} icon={<PinIcon width={18} height={18} />}>
             Use my location
           </Button>
         )}
-        <SelectField label="Sort by" value={sort} onChange={(e) => setSortChoice(e.target.value as Sort)} className="min-w-[10rem]">
-          <option value="rating">Top rated</option>
-          <option value="soonest">Soonest available</option>
-          {here && <option value="nearest">Nearest</option>}
-          <option value="price">Lowest price</option>
-        </SelectField>
+        <SelectField
+          label="Sort by"
+          value={sort}
+          onValueChange={(v) => setSortChoice(v as Sort)}
+          className="min-w-[12rem]"
+          options={[
+            { value: "rating", label: "Top rated" },
+            { value: "soonest", label: "Soonest available" },
+            ...(here ? [{ value: "nearest", label: "Nearest" }] : []),
+            { value: "price", label: "Lowest price" },
+          ]}
+        />
         <div className="ml-auto">
           <Segmented<View>
             legend="View"

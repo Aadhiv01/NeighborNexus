@@ -1,5 +1,6 @@
-import { useId, useState, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
-import { EyeIcon, EyeOffIcon } from "./Icons";
+import { useId, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
+import { Select } from "@base-ui/react/select";
+import { CheckIcon, ChevronDownIcon, EyeIcon, EyeOffIcon } from "./Icons";
 
 const control =
   "w-full rounded-ui border border-line bg-bg px-3 py-2.5 text-base text-ink placeholder:text-ink-soft transition-colors hover:border-ink-soft focus-visible:border-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent disabled:opacity-60";
@@ -43,13 +44,16 @@ function Shell({
 const describe = (id: string, hint?: string, error?: string | null) =>
   hint || error ? { "aria-describedby": `${id}-msg`, "aria-invalid": error ? true : undefined } : {};
 
+/** Single line controls are exactly as tall as a large button, so they line up side by side. */
+const line = "h-12";
+
 export function TextField({
   label, hint, error, className, hideLabel, ...rest
 }: Shell & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
   return (
     <Shell id={id} {...{ label, hint, error, className, hideLabel }}>
-      <input id={id} className={control} {...describe(id, hint, error)} {...rest} />
+      <input id={id} className={`${control} ${line}`} {...describe(id, hint, error)} {...rest} />
     </Shell>
   );
 }
@@ -65,7 +69,7 @@ export function PasswordField({
         <input
           id={id}
           type={shown ? "text" : "password"}
-          className={`${control} pr-11`}
+          className={`${control} ${line} pr-11`}
           {...describe(id, hint, error)}
           {...rest}
         />
@@ -94,16 +98,65 @@ export function TextArea({
   );
 }
 
+export interface SelectOption { value: string; label: string }
+
+// Base UI treats an empty value as "nothing chosen", so "All" options use a stand-in value.
+const NONE = "__none__";
+
+/**
+ * A dropdown that matches the page: same height, corners, colours and focus ring as the other
+ * fields, with a styled list. Built on Base UI's Select, so the keyboard (arrows, typing to jump,
+ * Enter, Escape) and screen readers work like a native select.
+ */
 export function SelectField({
-  label, hint, error, className, hideLabel, children, ...rest
-}: Shell & SelectHTMLAttributes<HTMLSelectElement>) {
-  const id = useId();
+  label, value, options, onValueChange, className = "", hideLabel,
+}: {
+  label: string;
+  value: string;
+  options: SelectOption[];
+  onValueChange: (value: string) => void;
+  className?: string;
+  hideLabel?: boolean;
+}) {
+  const items = options.map((o) => ({ value: o.value === "" ? NONE : o.value, label: o.label }));
   return (
-    <Shell id={id} {...{ label, hint, error, className, hideLabel }}>
-      <select id={id} className={control} {...describe(id, hint, error)} {...rest}>
-        {children}
-      </select>
-    </Shell>
+    <div className={className}>
+      <Select.Root
+        items={items}
+        value={value === "" ? NONE : value}
+        onValueChange={(v) => onValueChange(v == null || v === NONE ? "" : String(v))}
+      >
+        <Select.Label className={hideLabel ? "sr-only" : "mb-1.5 block text-sm font-semibold text-ink"}>{label}</Select.Label>
+        <Select.Trigger
+          className={`${control} ${line} flex cursor-pointer items-center justify-between gap-2 text-left data-[popup-open]:border-accent`}
+        >
+          <Select.Value className="truncate" />
+          <Select.Icon className="shrink-0 text-ink-soft transition-transform data-[popup-open]:rotate-180">
+            <ChevronDownIcon />
+          </Select.Icon>
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Positioner sideOffset={6} className="z-[170] select-none outline-none">
+            <Select.Popup className="min-w-[var(--anchor-width)] origin-[var(--transform-origin)] overflow-hidden rounded-card border border-line bg-surface text-ink shadow-[0_18px_40px_-18px_var(--ink)] outline-none transition-[opacity,transform] duration-150 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+              <Select.List className="max-h-[var(--available-height)] overflow-y-auto p-1.5">
+                {items.map((o) => (
+                  <Select.Item
+                    key={o.value}
+                    value={o.value}
+                    className="grid cursor-pointer grid-cols-[1.25rem_1fr] items-center gap-2 rounded-ui px-2.5 py-2.5 text-base outline-none data-[highlighted]:bg-accent-soft data-[selected]:font-semibold"
+                  >
+                    <Select.ItemIndicator className="text-accent">
+                      <CheckIcon width={18} height={18} />
+                    </Select.ItemIndicator>
+                    <Select.ItemText className="col-start-2">{o.label}</Select.ItemText>
+                  </Select.Item>
+                ))}
+              </Select.List>
+            </Select.Popup>
+          </Select.Positioner>
+        </Select.Portal>
+      </Select.Root>
+    </div>
   );
 }
 

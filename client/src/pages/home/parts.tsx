@@ -40,7 +40,7 @@ export function HeroSearch({ categories, tone = "plain" }: { categories: string[
         <p className={`mb-0 mt-3 flex flex-wrap items-center gap-2 text-sm ${tone === "ink" ? "text-bg" : "text-ink-soft"}`}>
           Popular:
           {categories.slice(0, 5).map((c) => (
-            <Link key={c} to={`/services?category=${encodeURIComponent(c)}`} viewTransition className={`rounded-full border px-3 py-1 font-semibold hover:border-accent hover:bg-accent-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-accent ${tone === "ink" ? "border-bg text-bg" : "border-line text-ink"}`}>
+            <Link key={c} to={`/services?category=${encodeURIComponent(c)}`} viewTransition className={`inline-flex h-9 items-center rounded-ui border px-3.5 font-semibold hover:border-accent hover:bg-accent-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-accent ${tone === "ink" ? "border-bg text-bg" : "border-line text-ink"}`}>
               {c}
             </Link>
           ))}

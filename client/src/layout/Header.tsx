@@ -31,7 +31,7 @@ function navFor(user: User | null): NavItem[] {
 }
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `rounded-ui px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-accent ${
+  `inline-flex h-9 items-center rounded-ui px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-accent ${
     isActive ? "bg-accent-soft text-ink" : "text-ink-soft hover:bg-surface-2 hover:text-ink"
   }`;
 
@@ -67,7 +67,7 @@ export default function Header() {
         <Link
           to={user ? dashboardFor(user) : "/"}
           viewTransition
-          className="mr-2 flex items-center gap-2.5 rounded-ui focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="mr-2 flex h-9 items-center gap-2.5 rounded-ui focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <Logo />
           <span className="font-display text-xl font-bold tracking-tight">NeighborNexus</span>
@@ -94,7 +94,7 @@ export default function Header() {
             </>
           ) : (
             <>
-              <LinkButton to="/login" variant="ghost" size="sm">Log in</LinkButton>
+              <LinkButton to="/login" variant="secondary" size="sm">Log in</LinkButton>
               <LinkButton to="/signup" size="sm">Sign up</LinkButton>
             </>
           )}
