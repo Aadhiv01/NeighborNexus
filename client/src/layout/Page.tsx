@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 export function usePageTitle(title: string) {
   useEffect(() => {
@@ -12,9 +12,11 @@ export default function Page({
   title, children, wide = false,
 }: { title: string; children: ReactNode; wide?: boolean }) {
   usePageTitle(title);
+  const reduce = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      // People who ask for reduced motion get no entrance animation at all, not even a fade.
+      initial={reduce ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
       className={`mx-auto w-full px-5 py-10 ${wide ? "max-w-[1240px]" : "max-w-[1240px]"}`}

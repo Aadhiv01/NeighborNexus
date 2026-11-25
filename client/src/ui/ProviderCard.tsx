@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import type { Provider } from "../lib/types";
 import { describeNext, formatDistance, isToday, money } from "../lib/date";
 import { Badge, Monogram, Rating } from "./Display";
@@ -15,9 +15,10 @@ export const categoriesOf = (p: Provider) => [...new Set(p.services.map((s) => s
 export default function ProviderCard({ provider: p, index = 0 }: { provider: Provider; index?: number }) {
   const from = priceFrom(p);
   const cats = categoriesOf(p);
+  const reduce = useReducedMotion();
   return (
     <motion.li
-      initial={{ opacity: 0, y: 14 }}
+      initial={reduce ? false : { opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index, 8) * 0.04, duration: 0.3 }}
     >
