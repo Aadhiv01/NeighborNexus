@@ -22,14 +22,12 @@ export default defineConfig({
         // whole bundle for returning visitors.
         manualChunks(id: string) {
           if (!id.includes("node_modules")) return undefined;
-          if (id.includes("chart.js") || id.includes("react-chartjs-2"))
-            return "charts";
-          if (id.includes("primereact") || id.includes("primeicons"))
-            return "primereact";
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return "react";
+          if (id.includes("react-router") || id.includes("@remix-run")) return "router";
+          if (id.includes("@base-ui")) return "base-ui";
+          if (id.includes("maplibre-gl")) return "maplibre";
           if (id.includes("@tanstack")) return "query";
-          if (id.includes("styled-components") || id.includes("framer-motion"))
-            return "ui-motion";
-          if (id.includes("react")) return "react";
+          if (id.includes("motion")) return "motion";
           return "vendor";
         },
       },
