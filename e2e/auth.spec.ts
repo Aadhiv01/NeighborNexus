@@ -28,13 +28,36 @@ test.describe("signed out", () => {
     });
     await logInThroughTheForm(page, "alex@example.com");
 
-    // The form confirms first, while still on the login page...
+    // Progress first, then the confirmation, while still on the login page...
+    await expect(page.getByRole("button", { name: "Signing in…" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Signed in" })).toBeVisible();
     await expect(page).toHaveURL(/\/login$/);
     // ...then the page changes, with a toast.
     await expect(page).toHaveURL(/\/dashboard\/member$/);
     await expect(toastRegion(page)).toContainText("Welcome back, Alex");
     expect(await page.evaluate(() => (window as unknown as { __vt: number }).__vt)).toBeGreaterThanOrEqual(1);
+  });
+
+  test("the dashboard opens already filled in, with no loading placeholders", async ({ page }) => {
+    await logInThroughTheForm(page, "alex@example.com");
+    await expect(page).toHaveURL(/\/dashboard\/member$/);
+    // Checked straight away: the data was fetched during the "Signed in" beat.
+    const placeholders = await page.evaluate(
+      () => [...document.querySelectorAll("*")].filter((el) => getComputedStyle(el).animationName.includes("nn-shimmer")).length
+    );
+    expect(placeholders).toBe(0);
+    await expect(page.getByRole("heading", { name: "Neighbours to try" })).toBeVisible({ timeout: 500 });
+    await expect(page.locator("ul li h2").first()).toBeVisible({ timeout: 500 });
+  });
+
+  test("a wrong password is reported straight away, not after the minimum progress time", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email address").fill("alex@example.com");
+    await page.getByLabel("Password", { exact: true }).fill("wrong-password");
+    const started = Date.now();
+    await page.getByRole("button", { name: "Log in", exact: true }).last().click();
+    await expect(page.getByRole("alert")).toContainText("Incorrect password");
+    expect(Date.now() - started).toBeLessThan(850);
   });
 
   test("sign up creates an account and signs it in", async ({ page }) => {

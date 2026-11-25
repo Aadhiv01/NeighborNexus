@@ -67,6 +67,22 @@ export interface ProviderSearch {
   radiusKm?: number;
 }
 
+/**
+ * Loads what a person's dashboard needs using an explicit token, before the session is stored. This
+ * lets sign in finish its "Signed in" beat while the dashboard's data arrives, so the next page
+ * opens already filled instead of showing placeholders.
+ */
+export async function dashboardData(type: string, token: string): Promise<[readonly unknown[], unknown][]> {
+  const headers = { Authorization: `Bearer ${token}` };
+  const load = async <T>(url: string) => (await http.get<T>(url, { headers })).data;
+  if (type === "Service Provider") {
+    const [profile, bookings] = await Promise.all([load("/serviceprovider/profile"), load("/serviceprovider/bookings")]);
+    return [[qk.providerProfile, profile], [qk.providerBookings, bookings]];
+  }
+  const [providers, bookings] = await Promise.all([load("/serviceprovider"), load("/bookings")]);
+  return [[qk.providers, providers], [qk.bookings, bookings]];
+}
+
 export const api = {
   // auth
   login: async (body: { email: string; password: string }) =>
