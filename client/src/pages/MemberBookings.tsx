@@ -12,6 +12,8 @@ import RescheduleDialog from "./RescheduleDialog";
 
 type Filter = "upcoming" | "past" | "all";
 
+const canReschedule = (b: Booking) => !b.rescheduleDeadline || new Date(b.rescheduleDeadline) > new Date();
+
 export default function MemberBookings() {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -87,6 +89,11 @@ export default function MemberBookings() {
                   {nameOf(b.serviceProviderId, "Provider")} · {formatBookingDate(b.date)} · {timeRange(b.startTime, b.endTime)}
                 </p>
                 {b.price ? <p className="m-0 mt-0.5 text-sm text-ink-soft">{money(b.price)}</p> : null}
+                {b.status === "upcoming" && b.rescheduleDeadline && canReschedule(b) ? (
+                  <p className="m-0 mt-0.5 text-sm text-ink-soft">
+                    You can reschedule until {formatBookingDate(b.rescheduleDeadline)} at {new Date(b.rescheduleDeadline).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}.
+                  </p>
+                ) : null}
                 {b.reschedules?.length ? (
                   <p className="m-0 mt-0.5 text-sm text-ink-soft">
                     Moved from {formatBookingDate(b.reschedules[0].date)} at {formatTime(b.reschedules[0].startTime)}
@@ -97,9 +104,13 @@ export default function MemberBookings() {
                 <StatusBadge status={b.status} />
                 {b.status === "upcoming" && (
                   <>
-                    <Button variant="secondary" size="sm" onClick={() => setToMove(b)} aria-label={`Reschedule ${b.serviceName || "booking"}`}>
-                      Reschedule
-                    </Button>
+                    {canReschedule(b) ? (
+                      <Button variant="secondary" size="sm" onClick={() => setToMove(b)} aria-label={`Reschedule ${b.serviceName || "booking"}`}>
+                        Reschedule
+                      </Button>
+                    ) : (
+                      <span className="max-w-[11rem] text-right text-xs text-ink-soft">Rescheduling has closed. You can still cancel.</span>
+                    )}
                     <Button variant="danger" size="sm" onClick={() => setToCancel(b)}>
                       Cancel
                     </Button>

@@ -28,6 +28,8 @@ export default function ProviderDashboard() {
     .filter((b) => b.status === "upcoming")
     .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
 
+  const byYou = bookings.filter((b) => b.status === "canceled" && b.canceledBy === "provider");
+  const lateByYou = byYou.filter((b) => (b.canceledHoursBefore ?? 99) < 24).length;
   const services = profile.data?.services ?? [];
   const hasHours = (profile.data?.availability ?? []).some((a) => a.slots.length > 0);
   const rating = profile.data?.rating ?? 0;
@@ -60,9 +62,14 @@ export default function ProviderDashboard() {
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
         <Stat label="Upcoming" value={bookingsQ.isPending ? "–" : count("upcoming")} />
         <Stat label="Completed" value={bookingsQ.isPending ? "–" : count("completed")} />
+        <Stat
+          label="Canceled by you"
+          value={bookingsQ.isPending ? "–" : byYou.length}
+          hint={byYou.length ? `${lateByYou} within 24 hours of the start. Only you can see this.` : "Only you can see this."}
+        />
         <Stat label="Services" value={profile.isPending ? "–" : services.length} />
         <Stat
           label="Rating"

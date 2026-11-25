@@ -93,6 +93,10 @@ export interface Booking {
   status: BookingStatus;
   /** Earlier times for this booking, oldest first. */
   reschedules?: { date: string; startTime: string; endTime: string; at: string }[];
+  /** Members only: after this moment rescheduling is closed (cancelling is not). */
+  rescheduleDeadline?: string;
+  canceledBy?: "member" | "provider";
+  canceledHoursBefore?: number;
 }
 
 export interface SlotsResponse {

@@ -25,11 +25,11 @@ export async function expectNoAxeViolations(page: Page, label: string) {
 }
 
 /** Opens the day strip on a provider page until a day with at least `min` open times is found. */
-export async function chooseDayWithSlots(page: Page, name: string, min = 2) {
+export async function chooseDayWithSlots(page: Page, name: string, min = 2, fromDay = 0) {
   const days = page.locator(`input[name="${name}-day"]`);
   await days.first().waitFor(); // the picker only exists once the provider has loaded
   const count = await days.count();
-  for (let i = 0; i < count; i += 1) {
+  for (let i = fromDay; i < count; i += 1) {
     // A native click works even when the radio is visually hidden or scrolled out of its strip.
     await days.nth(i).evaluate((el) => (el as HTMLInputElement).click());
     await page.waitForTimeout(400);

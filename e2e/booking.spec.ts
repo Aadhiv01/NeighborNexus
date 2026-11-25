@@ -31,7 +31,8 @@ test.describe.serial("a booking from start to finish, with both people kept info
     await member.goto("/services");
     await member.locator("a", { hasText: "Maya Chen" }).click();
     await expect(member.getByRole("heading", { name: "Book a service" })).toBeVisible();
-    await chooseDayWithSlots(member, "book", 3);
+    // Two days ahead, so the booking is well outside the 12 hour reschedule cutoff.
+    await chooseDayWithSlots(member, "book", 3, 2);
     await member.locator('input[name="book-slot"]').first().check({ force: true });
     await member.getByRole("button", { name: /^Confirm/ }).click();
     await expect(member.getByText("Booked", { exact: true })).toBeVisible();
@@ -40,6 +41,7 @@ test.describe.serial("a booking from start to finish, with both people kept info
   test("the member moves it to another time", async () => {
     await member.goto("/bookings");
     const row = member.getByRole("listitem").filter({ hasText: "Emergency leak repair" }).first();
+    await expect(row.getByText(/You can reschedule until/)).toBeVisible();
     await row.getByRole("button", { name: /Reschedule/ }).click();
     await expect(member.getByRole("dialog")).toBeVisible();
 
@@ -66,6 +68,12 @@ test.describe.serial("a booking from start to finish, with both people kept info
     await expect(provider).toHaveURL(/serviceprovider\/bookings$/);
     await expect(provider.getByText("Rescheduled", { exact: true }).first()).toBeVisible();
     expect(await unreadCount(provider)).toBe(before - 1);
+  });
+
+  test("the provider's dashboard shows their own cancellation record, privately", async () => {
+    await provider.goto("/dashboard/serviceprovider");
+    await expect(provider.getByText("Canceled by you")).toBeVisible();
+    await expect(provider.getByText("Only you can see this.")).toBeVisible();
   });
 
   test("the provider completes the job and the member is told", async () => {
