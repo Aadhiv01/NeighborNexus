@@ -47,7 +47,7 @@ export default function Notifications() {
       <PageHeader
         eyebrow="Updates"
         title="Your updates"
-        subtitle={unread ? `${unread} unread.` : "You’re all caught up."}
+        subtitle={isPending ? "Checking for updates…" : unread ? `${unread} unread.` : "You’re all caught up."}
         actions={<Button variant="secondary" disabled={!unread} loading={markAll.isPending} onClick={() => markAll.mutate()}>Mark all as read</Button>}
       />
 
