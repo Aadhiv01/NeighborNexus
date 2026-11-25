@@ -11,7 +11,7 @@ import { useToast } from "../ui/Feedback";
  * request, which has already finished. It is a beat so the person can see the result, and it keeps
  * a very fast sign-in from flashing past.
  */
-export const AUTH_SETTLE_MS = 450;
+export const AUTH_SETTLE_MS = 1200;
 
 export const dashboardFor = (user?: User | null) =>
   user?.type === "Service Provider" ? "/dashboard/serviceprovider" : "/dashboard/member";
