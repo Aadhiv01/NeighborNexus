@@ -60,10 +60,11 @@ export default function Header() {
   useEffect(() => setOpen(false), [pathname]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur" style={{ viewTransitionName: "site-header" }}>
       <div className="mx-auto flex max-w-[1240px] items-center gap-4 px-5 py-3">
         <Link
           to={user ? dashboardFor(user) : "/services"}
+          viewTransition
           className="mr-2 flex items-center gap-2.5 rounded-ui focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <Logo />
@@ -72,7 +73,7 @@ export default function Header() {
 
         <nav aria-label="Main" className="ml-2 hidden flex-1 items-center gap-1 md:flex">
           {items.map((i) => (
-            <NavLink key={i.to} to={i.to} end={i.end} className={linkClass}>
+            <NavLink key={i.to} to={i.to} end={i.end} className={linkClass} viewTransition>
               <NavLabel item={i} />
             </NavLink>
           ))}
@@ -110,7 +111,7 @@ export default function Header() {
         <div id="mobile-nav" className="border-t border-line bg-bg px-5 pb-4 md:hidden">
           <nav aria-label="Main" className="flex flex-col gap-1 py-3">
             {items.map((i) => (
-              <NavLink key={i.to} to={i.to} end={i.end} className={linkClass}>
+              <NavLink key={i.to} to={i.to} end={i.end} className={linkClass} viewTransition>
                 {i.label}
               </NavLink>
             ))}

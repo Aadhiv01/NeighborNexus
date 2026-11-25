@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MotionConfig } from "motion/react";
 
@@ -28,48 +28,15 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
 });
 
-export default function App() {
+/** App-wide providers, rendered as the root layout route so every page sits inside them. */
+function Providers() {
   return (
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
         <UserProvider>
           <ToastProvider>
             <Suspense fallback={<PageLoading />}>
-              <Routes>
-                <Route path="/lab" element={<ThemeLab />} />
-
-                <Route element={<AppShell />}>
-                  <Route path="/" element={<Navigate to="/services" replace />} />
-                  {/* Signed-in people have no use for these, so they are sent to their dashboard */}
-                  <Route element={<GuestRoute />}>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signup" element={<Signup />} />
-                  </Route>
-
-                  {/* Public discovery: browsing must not require an account */}
-                  <Route path="/services" element={<Discover />} />
-                  <Route path="/services/:providerId" element={<ProviderDetail />} />
-
-                  <Route element={<ProtectedRoute />}>
-                    <Route path="/notifications" element={<Notifications />} />
-                  </Route>
-
-                  <Route element={<ProtectedRoute roles={["Community Member"]} />}>
-                    <Route path="/dashboard/member" element={<MemberDashboard />} />
-                    <Route path="/bookings" element={<MemberBookings />} />
-                  </Route>
-
-                  <Route element={<ProtectedRoute roles={["Service Provider"]} />}>
-                    <Route path="/dashboard/serviceprovider" element={<ProviderDashboard />} />
-                    <Route path="/dashboard/serviceprovider/bookings" element={<ProviderBookings />} />
-                    <Route path="/dashboard/serviceprovider/services" element={<ProviderServices />} />
-                    <Route path="/dashboard/serviceprovider/availability" element={<ProviderAvailability />} />
-                    <Route path="/dashboard/serviceprovider/profile" element={<ProviderProfile />} />
-                  </Route>
-
-                  <Route path="*" element={<Navigate to="/services" replace />} />
-                </Route>
-              </Routes>
+              <Outlet />
             </Suspense>
           </ToastProvider>
         </UserProvider>
@@ -77,3 +44,49 @@ export default function App() {
     </MotionConfig>
   );
 }
+
+/**
+ * These are real data routes, not a <Routes> tree inside a catch-all. That matters: navigation from
+ * a nested <Routes> goes through a wrapper that drops the `viewTransition` option, so page
+ * transitions silently never ran.
+ */
+export const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route element={<Providers />}>
+      <Route path="/lab" element={<ThemeLab />} />
+
+      <Route element={<AppShell />}>
+        <Route path="/" element={<Navigate to="/services" replace />} />
+
+        {/* Signed-in people have no use for these, so they are sent to their dashboard */}
+        <Route element={<GuestRoute />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+        </Route>
+
+        {/* Public discovery: browsing must not require an account */}
+        <Route path="/services" element={<Discover />} />
+        <Route path="/services/:providerId" element={<ProviderDetail />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="/notifications" element={<Notifications />} />
+        </Route>
+
+        <Route element={<ProtectedRoute roles={["Community Member"]} />}>
+          <Route path="/dashboard/member" element={<MemberDashboard />} />
+          <Route path="/bookings" element={<MemberBookings />} />
+        </Route>
+
+        <Route element={<ProtectedRoute roles={["Service Provider"]} />}>
+          <Route path="/dashboard/serviceprovider" element={<ProviderDashboard />} />
+          <Route path="/dashboard/serviceprovider/bookings" element={<ProviderBookings />} />
+          <Route path="/dashboard/serviceprovider/services" element={<ProviderServices />} />
+          <Route path="/dashboard/serviceprovider/availability" element={<ProviderAvailability />} />
+          <Route path="/dashboard/serviceprovider/profile" element={<ProviderProfile />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/services" replace />} />
+      </Route>
+    </Route>
+  )
+);

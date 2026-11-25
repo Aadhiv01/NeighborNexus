@@ -18,3 +18,19 @@
   ::selection { background: var(--accent); color: var(--accent-ink); }
   code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; }
 }
+
+/* Page changes cross-fade through the browser's View Transitions. The header has its own name in
+   Header.tsx, so it stays put while the page underneath changes. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 240ms;
+  animation-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

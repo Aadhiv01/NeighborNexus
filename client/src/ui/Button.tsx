@@ -72,7 +72,7 @@ interface LinkButtonProps extends LinkProps {
 
 export function LinkButton({ variant = "primary", size = "md", icon, className = "", children, ...rest }: LinkButtonProps) {
   return (
-    <Link className={buttonClass(variant, size, className)} {...rest}>
+    <Link className={buttonClass(variant, size, className)} viewTransition {...rest}>
       {icon}
       {children}
     </Link>
