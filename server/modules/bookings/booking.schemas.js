@@ -13,6 +13,8 @@ const slotsQuery = z.object({
   excludeBookingId: objectId('Invalid booking id').optional(),
 });
 
+const streamQuery = z.object({ serviceProviderId: objectId('Invalid serviceProviderId') });
+
 const create = z.object({
   serviceProviderId: objectId('Invalid serviceProviderId'),
   serviceId: objectId('Invalid serviceId'),
@@ -35,4 +37,4 @@ const updateStatus = z.object({
   timeSpent: z.coerce.number().min(0).optional(),
 });
 
-module.exports = { slotsQuery, create, reschedule, idParam, updateStatus };
+module.exports = { streamQuery, slotsQuery, create, reschedule, idParam, updateStatus };

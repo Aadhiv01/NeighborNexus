@@ -8,6 +8,7 @@ const { startOfDayUTC, slotsForDay, toMinutes, localISO, dropPastSlots } = requi
 const schemas = require('./booking.schemas');
 const { notifyBooking } = require('../notifications/notify');
 const { formatDate, formatTime } = require('../../lib/format');
+const live = require('../../lib/live');
 
 const router = express.Router();
 
@@ -29,6 +30,11 @@ const dayBookings = (serviceProviderId, day, excludeId) =>
   Booking.find({ serviceProviderId, date: day, status: 'upcoming', ...(excludeId ? { _id: { $ne: excludeId } } : {}) })
     .select('startTime endTime status')
     .lean();
+
+// GET /api/bookings/stream?serviceProviderId=: a live signal that this provider's times changed
+router.get('/stream', validate({ query: schemas.streamQuery }), (req, res) => {
+  live.open(req, res, req.valid.query.serviceProviderId);
+});
 
 // GET /api/bookings/slots?serviceProviderId=&serviceId=&date=YYYY-MM-DD
 // Public: a member browsing availability doesn't need to be logged in.
@@ -106,6 +112,7 @@ router.post('/', authenticate, validate({ body: schemas.create }), async (req, r
     endTime,
   });
 
+  live.publish(serviceProviderId, { date });
   notifyBooking(booking, 'created');
   return res.status(201).json(booking);
 });
@@ -174,6 +181,7 @@ router.put(
     if (status === 'completed' && timeSpent != null) booking.timeSpent = timeSpent;
 
     await booking.save();
+    live.publish(booking.serviceProviderId, {});
     if (status === 'canceled') notifyBooking(booking, 'canceled', { by: isOwner ? 'member' : 'provider' });
     if (status === 'completed') notifyBooking(booking, 'completed');
     return res.json(booking);
@@ -238,6 +246,7 @@ router.post(
     // The unique index decides a race: if someone took the slot meanwhile this fails with a 409.
     await booking.save();
 
+    live.publish(booking.serviceProviderId, {});
     notifyBooking(booking, 'rescheduled', { was });
     return res.json(booking);
   }
@@ -258,6 +267,7 @@ router.delete('/:id', authenticate, validate({ params: schemas.idParam }), async
   booking.status = 'canceled';
   await booking.save();
 
+  live.publish(booking.serviceProviderId, {});
   notifyBooking(booking, 'canceled', { by: isOwner ? 'member' : 'provider' });
   return res.json({ msg: 'Booking canceled', booking });
 });

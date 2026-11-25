@@ -10,6 +10,7 @@ const authRoutes = require('./modules/auth/auth.routes');
 const providerRoutes = require('./modules/providers/provider.routes');
 const bookingRoutes = require('./modules/bookings/booking.routes');
 const notificationRoutes = require('./modules/notifications/notification.routes');
+const live = require('./lib/live');
 const { sendDueReminders } = require('./modules/notifications/reminders');
 
 const app = express();
@@ -89,6 +90,7 @@ async function start() {
   const shutdown = (signal) => {
     logger.info(`${signal} received, shutting down.`);
     clearInterval(reminderTimer);
+    live.closeAll(); // open streams would otherwise keep server.close() waiting
     server.close(async () => {
       await mongoose.connection.close();
       process.exit(0);

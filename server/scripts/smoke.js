@@ -287,6 +287,42 @@ async function main() {
     await api(`/api/bookings/${sams.data._id}`, { method: 'DELETE', token: samTok });
   }
 
+  // ── live slot stream and concurrent booking ───────────────────────────
+  {
+    const when = await findOpenDate(provider._id, serviceId);
+    const slots = (await api(`/api/bookings/slots?serviceProviderId=${provider._id}&serviceId=${serviceId}&date=${when.date}`)).data.slots;
+    const pick = slots[slots.length - 1];
+    const body = { serviceProviderId: provider._id, serviceId, date: when.date, startTime: pick.start, endTime: pick.end };
+    const samTok = (await api('/api/auth', { method: 'POST', body: { email: 'sam@example.com', password: 'password123' } })).data.token;
+
+    // Open the stream, then make a booking and expect a signal about it.
+    const ctrl = new AbortController();
+    const res = await fetch(`${BASE}/api/bookings/stream?serviceProviderId=${provider._id}`, { signal: ctrl.signal });
+    check('the live stream opens as an event stream', res.status === 200 && (res.headers.get('content-type') || '').includes('text/event-stream'));
+    let received = '';
+    const reader = res.body.getReader();
+    const pump = (async () => {
+      const dec = new TextDecoder();
+      try { for (;;) { const { done, value } = await reader.read(); if (done) break; received += dec.decode(value); } } catch { /* aborted */ }
+    })();
+
+    // Two members try for the very same time at the same instant: exactly one may win.
+    const both = await Promise.all([
+      api('/api/bookings', { method: 'POST', token: memberToken, body }),
+      api('/api/bookings', { method: 'POST', token: samTok, body }),
+    ]);
+    const codes = both.map((r) => r.status).sort();
+    check('two members booking the same time at once: one wins, one gets 409', codes[0] === 201 && codes[1] === 409, `got ${codes}`);
+    check('the loser is told the time was just booked', both.some((r) => r.status === 409 && /booked|available/i.test(r.data?.msg || '')));
+
+    await new Promise((r) => setTimeout(r, 400));
+    check('the stream announced that times changed', received.includes('event: slots'));
+    const winner = both.find((r) => r.status === 201);
+    ctrl.abort();
+    await pump;
+    if (winner) await api(`/api/bookings/${winner.data._id}`, { method: 'DELETE', token: winner.data.user === login.data.user.id ? memberToken : samTok });
+  }
+
   // ── next available and near me ────────────────────────────────────────
   const withNext = providers.data.filter((p) => p.nextAvailable);
   check(
