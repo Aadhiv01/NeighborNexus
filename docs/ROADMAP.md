@@ -69,3 +69,24 @@ mobile first (members are the audience that benefits from an app).
 - Provider "request a quote" for jobs with no fixed price.
 - Photos on provider profiles, with moderation.
 - Payments, only when there is something to charge for; late-cancel fees belong there.
+- Private messages between a customer and a provider. Not built. Add them only if real users ask for
+  them, since they bring moderation and abuse work (reports, blocking, retention, legal requests).
+
+## 5. Operations: monitoring and an admin area (before launch, in this order)
+
+Enterprise apps do have this, but they start with off-the-shelf tools and build a custom admin page
+only when support work needs one.
+
+1. **Errors and uptime first, no custom code:** an error tracker (Sentry or similar) on the API and
+   the web app, an uptime check on `/health`, alerts to email. The API already writes structured JSON
+   logs (Pino); ship them somewhere searchable. Add Web Vitals to see real page speed.
+2. **Database and host metrics** from the hosting provider and MongoDB Atlas (slow queries, memory,
+   connections).
+3. **A small admin console, only for the owner**, once there are real users to support:
+   - a separate `Admin` role that can never be chosen at sign up and is granted directly in the
+     database, with two-factor sign in and an audit log of everything it does;
+   - look up a user or booking, see cancellations and who canceled, and handle reports;
+   - read-only counters (sign ups, bookings per day, cancellations, failed emails).
+   Keep it read-only first. Anything that changes data (disable an account, cancel a booking) comes
+   after the audit log exists.
+4. **A "report a problem" link** in the app that creates a record the admin console can list.
