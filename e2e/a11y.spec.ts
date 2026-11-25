@@ -5,7 +5,7 @@ import { MEMBER, PROVIDER, expectNoAxeViolations } from "./helpers";
 test.use({ reducedMotion: "reduce" });
 
 test.describe("accessibility: signed out", () => {
-  for (const path of ["/services", "/login", "/signup", "/lab"]) {
+  for (const path of ["/", "/services", "/login", "/signup", "/lab"]) {
     test(`${path} has no axe violations`, async ({ page }) => {
       await page.goto(path);
       await expect(page.locator("h1").first()).toBeVisible();

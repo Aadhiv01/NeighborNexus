@@ -100,6 +100,9 @@ ok   canceling returns the slot to availability
   Hanken Grotesk, light mode, soft corners.
 - **TypeScript strict** across the client. API calls and query keys live in `src/lib/api.ts`.
 - **View Transitions**: provider cards morph into the detail page (`<Link viewTransition>`).
+- **Home page** at `/` for signed-out visitors (signed-in people are sent to their dashboard). It is
+  built from real data: `GET /api/stats` gives the counts, prices and open times behind its charts,
+  and anything with nothing to show is left out instead of made up.
 - **Theme lab** at `/lab` (temporary) — try palettes, type pairings, light/dark and
   corner styles live, with a contrast checker. Delete `src/pages/ThemeLab` and the `/lab`
   route when you no longer need it. `npm --prefix client run dev`, then

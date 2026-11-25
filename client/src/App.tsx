@@ -11,7 +11,7 @@ import { PageLoading, ToastProvider } from "./ui/Feedback";
 
 // Route-level code splitting: members never download the provider tools, and vice versa.
 const ThemeLab = lazy(() => import("./pages/ThemeLab/ThemeLab"));
-const LandingLab = lazy(() => import("./pages/LandingLab/LandingLab"));
+const Home = lazy(() => import("./pages/home/Home"));
 const Signup = lazy(() => import("./pages/Signup"));
 const Login = lazy(() => import("./pages/Login"));
 const Discover = lazy(() => import("./pages/Discover"));
@@ -57,8 +57,7 @@ export const router = createBrowserRouter(
       <Route path="/lab" element={<ThemeLab />} />
 
       <Route element={<AppShell />}>
-        <Route path="/" element={<Navigate to="/services" replace />} />
-        <Route path="/lab/landing" element={<LandingLab />} />
+        <Route path="/" element={<Home />} />
 
         {/* Signed-in people have no use for these, so they are sent to their dashboard */}
         <Route element={<GuestRoute />}>

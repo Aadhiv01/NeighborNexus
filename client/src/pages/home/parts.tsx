@@ -49,25 +49,3 @@ export function HeroSearch({ categories, tone = "plain" }: { categories: string[
     </div>
   );
 }
-
-const STEPS = [
-  { n: "1", title: "Find someone nearby", text: "Search by what you need, or switch on your location to see who is close." },
-  { n: "2", title: "Pick a real time", text: "Every provider shows when they are next free. You only ever see times that are actually open." },
-  { n: "3", title: "Book, and change your mind", text: "Get a reminder before it starts. Reschedule up to 12 hours before, or cancel any time." },
-];
-
-export function HowItWorks() {
-  return (
-    <div>
-      <ol className="m-0 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-3">
-        {STEPS.map((s) => (
-          <li key={s.n} className="rounded-card border border-line bg-surface p-6">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-accent font-display text-lg font-bold text-accent-ink" aria-hidden>{s.n}</span>
-            <h3 className="mb-0 mt-4 font-display text-xl font-semibold">{s.title}</h3>
-            <p className="mb-0 mt-2 leading-relaxed text-ink-soft">{s.text}</p>
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}

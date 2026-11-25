@@ -5,7 +5,9 @@ and why. Dates are deliberately absent.
 
 ## 1. Soon: finish the web product
 
-- Landing page for signed-out visitors (try the options at `/lab/landing`, then pick one).
+- ~~Landing page for signed-out visitors~~ Done: concept A (editorial scroll story) is the home page at `/`.
+  Later: a short interactive preview of weekly hours and next free time for providers, once there is
+  real supply to show.
 - "Request and confirm" mode: a provider can approve bookings before they count.
 - Timezones. Times are stored as plain `HH:mm`, so reminders, "next free" and the reschedule cutoff
   assume the server and provider share a zone. Fix: store the provider's IANA zone, keep instants in

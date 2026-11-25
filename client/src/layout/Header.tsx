@@ -65,7 +65,7 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur" style={{ viewTransitionName: "site-header" }}>
       <div className="mx-auto flex max-w-[1240px] items-center gap-4 px-5 py-3">
         <Link
-          to={user ? dashboardFor(user) : "/services"}
+          to={user ? dashboardFor(user) : "/"}
           viewTransition
           className="mr-2 flex items-center gap-2.5 rounded-ui focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
