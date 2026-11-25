@@ -3,6 +3,9 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
 import "./index.css";
+import { applySettings, loadSettings } from "./theme/themeStore";
+
+applySettings(loadSettings());
 
 import App from "./App";
 

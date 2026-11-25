@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./theme/theme.css";
 
 /* The canvas is painted in App.jsx; these are global defaults only. */
 

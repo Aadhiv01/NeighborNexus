@@ -1,0 +1,93 @@
+/*
+ * Design tokens. A theme is four independent choices set as data attributes
+ * on <html>: palette, type, mode, radius. Components only ever use the
+ * semantic names (bg, surface, ink, accent...), never raw colours.
+ */
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-spark: var(--spark);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --radius-ui: var(--r-ui);
+  --radius-card: var(--r-card);
+  --font-display: var(--font-display-stack);
+  --font-body: var(--font-body-stack);
+}
+
+/* ── Palettes ───────────────────────────────────────────── */
+
+/* Paper: warm cream and terracotta, with sage */
+:root[data-palette="paper"][data-mode="light"] {
+  --bg: #faf5ec; --surface: #fffdf8; --surface-2: #f2eadb;
+  --ink: #2b2118; --ink-soft: #6b5b4b; --line: #e3d8c5;
+  --accent: #a8431a; --accent-ink: #fff8f0; --accent-soft: #f6ddd0;
+  --spark: #526b49; --good: #3f7a4b; --warn: #a8641a;
+}
+:root[data-palette="paper"][data-mode="dark"] {
+  --bg: #1b1612; --surface: #251e18; --surface-2: #2f261e;
+  --ink: #f6ede0; --ink-soft: #bfae9a; --line: #3b3027;
+  --accent: #e88a5f; --accent-ink: #1b1612; --accent-soft: #4a2a1c;
+  --spark: #9db892; --good: #8cc596; --warn: #e3a65b;
+}
+
+/* Harbor: cool mist, deep teal and saffron */
+:root[data-palette="harbor"][data-mode="light"] {
+  --bg: #f1f5f4; --surface: #ffffff; --surface-2: #e6eeec;
+  --ink: #10252a; --ink-soft: #4b6469; --line: #d3e0de;
+  --accent: #0e6a6e; --accent-ink: #f2fffd; --accent-soft: #d3eceb;
+  --spark: #b87400; --good: #1f7a4c; --warn: #b5530f;
+}
+:root[data-palette="harbor"][data-mode="dark"] {
+  --bg: #0c1b1e; --surface: #12272b; --surface-2: #193237;
+  --ink: #e8f3f1; --ink-soft: #9db7b6; --line: #24413f;
+  --accent: #4fc3c0; --accent-ink: #08191b; --accent-soft: #164649;
+  --spark: #f0b33c; --good: #6fd39b; --warn: #f0a55b;
+}
+
+/* Porch Light: warm charcoal, amber and clay (no navy, no purple) */
+:root[data-palette="porch"][data-mode="light"] {
+  --bg: #f7f0e3; --surface: #fffbf2; --surface-2: #eee3cf;
+  --ink: #2a2119; --ink-soft: #66584a; --line: #e0d3bc;
+  --accent: #8f5206; --accent-ink: #fff8ea; --accent-soft: #f4dfb5;
+  --spark: #a8503f; --good: #4c7a3f; --warn: #9a5a07;
+}
+:root[data-palette="porch"][data-mode="dark"] {
+  --bg: #1c1815; --surface: #26211d; --surface-2: #302a25;
+  --ink: #f4eadb; --ink-soft: #b9aa96; --line: #3d352e;
+  --accent: #e9a23b; --accent-ink: #20170a; --accent-soft: #4a3515;
+  --spark: #c9786a; --good: #98c48a; --warn: #e6a15a;
+}
+
+/* ── Type pairings ──────────────────────────────────────── */
+:root[data-type="editorial"] {
+  --font-display-stack: "Newsreader Variable", Georgia, serif;
+  --font-body-stack: "Hanken Grotesk Variable", system-ui, sans-serif;
+}
+:root[data-type="modern"] {
+  --font-display-stack: "Schibsted Grotesk Variable", system-ui, sans-serif;
+  --font-body-stack: "Figtree Variable", system-ui, sans-serif;
+}
+:root[data-type="soft"] {
+  --font-display-stack: "Fraunces Variable", Georgia, serif;
+  --font-body-stack: "Onest Variable", system-ui, sans-serif;
+}
+
+/* ── Corners ────────────────────────────────────────────── */
+:root[data-radius="sharp"] { --r-ui: 3px;  --r-card: 6px; }
+:root[data-radius="soft"]  { --r-ui: 10px; --r-card: 18px; }
+:root[data-radius="round"] { --r-ui: 999px; --r-card: 28px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nn-motion { animation: none !important; transition: none !important; }
+}
+@keyframes nn-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(1.5); } }
+@keyframes nn-shimmer { to { background-position: -200% 0; } }

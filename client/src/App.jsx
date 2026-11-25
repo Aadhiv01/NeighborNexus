@@ -17,6 +17,7 @@ import "./App.css";
 
 // Route-level code splitting: the member flow never downloads the provider
 // dashboard's tables and charts, and vice versa.
+const ThemeLab = lazy(() => import("./pages/ThemeLab/ThemeLab"));
 const Signup = lazy(() => import("./components/Signup/Signup"));
 const Login = lazy(() => import("./components/Login/Login"));
 const Discover = lazy(() => import("./components/Discover/Discover"));
@@ -111,6 +112,7 @@ function App() {
               >
                 <Routes>
                 <Route path="/" element={<Navigate to="/services" replace />} />
+                <Route path="/lab" element={<ThemeLab />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
