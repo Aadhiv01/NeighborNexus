@@ -3,9 +3,10 @@ import Header from "./Header";
 import { useUser } from "../auth/UserContext";
 
 export default function AppShell() {
-  const { user } = useUser();
-  const links =
-    user?.type === "Service Provider"
+  const { user, isLoading } = useUser();
+  const links = isLoading
+    ? []
+    : user?.type === "Service Provider"
       ? [
           { to: "/dashboard/serviceprovider/bookings", label: "Bookings" },
           { to: "/dashboard/serviceprovider/availability", label: "Availability" },

@@ -50,12 +50,14 @@ function NavLabel({ item }: { item: NavItem }) {
 }
 
 export default function Header() {
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
   const { logout, pending: loggingOut } = useLogout();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const unread = useNotifications().data?.unread ?? 0;
-  const items = navFor(user).map((i) => (i.to === "/notifications" ? { ...i, badge: unread } : i));
+  // While a stored session is being checked, show nothing user-specific. Showing the signed-out
+  // links for a moment and then swapping them is a visible flicker on every page load.
+  const items = (isLoading ? [] : navFor(user)).map((i) => (i.to === "/notifications" ? { ...i, badge: unread } : i));
 
   useEffect(() => setOpen(false), [pathname]);
 
@@ -80,7 +82,9 @@ export default function Header() {
         </nav>
 
         <div className="ml-auto hidden items-center gap-3 md:flex">
-          {user ? (
+          {isLoading ? (
+            <span className="block h-9 w-44" aria-hidden />
+          ) : user ? (
             <>
               <span className="flex items-center gap-2 text-sm font-semibold">
                 <Monogram name={user.name} size={32} />
@@ -116,7 +120,7 @@ export default function Header() {
               </NavLink>
             ))}
           </nav>
-          {user ? (
+          {isLoading ? null : user ? (
             <Button variant="secondary" className="w-full" loading={loggingOut} onClick={logout}>
               {loggingOut ? "Logging out…" : `Log out (${user.name.split(" ")[0]})`}
             </Button>
