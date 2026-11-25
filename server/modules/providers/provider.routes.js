@@ -8,6 +8,7 @@ const { toMinutes, startOfDayUTC, localISO, nextOpenSlot } = require('../booking
 const schemas = require('./provider.schemas');
 const { notifyBooking } = require('../notifications/notify');
 const live = require('../../lib/live');
+const { cancelInfo } = require('../bookings/slots');
 
 const router = express.Router();
 
@@ -237,7 +238,8 @@ router.put(
     });
     if (!booking) return res.status(404).json({ msg: 'Booking not found' });
 
-    booking.status = req.valid.body.status;
+    if (req.valid.body.status === 'canceled') booking.set(cancelInfo(booking, 'provider'));
+    else booking.status = req.valid.body.status;
     await booking.save();
     live.publish(booking.serviceProviderId, {});
     if (booking.status === 'canceled') notifyBooking(booking, 'canceled', { by: 'provider' });

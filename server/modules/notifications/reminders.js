@@ -1,18 +1,9 @@
 const logger = require('../../lib/logger');
 const Booking = require('../bookings/booking.model');
 const { notifyBooking } = require('./notify');
+const { bookingStart } = require('../bookings/slots');
 
 const HOUR = 3600 * 1000;
-
-/**
- * When a booking starts. `date` is UTC midnight of the calendar day and `startTime` is "HH:mm" in
- * the provider's local time, so this assumes the server shares that timezone.
- */
-function bookingStart(b) {
-  const d = new Date(b.date);
-  const [h, m] = b.startTime.split(':').map(Number);
-  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h, m);
-}
 
 /**
  * When the one reminder should go out, or null for none.

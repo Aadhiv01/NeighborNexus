@@ -105,7 +105,35 @@ function dropPastSlots(slots, day, now = new Date()) {
   return slots.filter((s) => toMinutes(s.start) > nowMinutes);
 }
 
+/**
+ * When a booking starts. `date` is UTC midnight of the calendar day and `startTime` is "HH:mm" in
+ * the provider's local time, so this assumes the server shares that timezone.
+ */
+function bookingStart(b) {
+  const d = new Date(b.date);
+  const [h, m] = b.startTime.split(':').map(Number);
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h, m);
+}
+
+const HOUR_MS = 3600 * 1000;
+
+/** The last moment a member may reschedule: `noticeHours` before the booking starts. */
+const rescheduleDeadline = (b, noticeHours) => new Date(bookingStart(b).getTime() - noticeHours * HOUR_MS);
+
+/** Fields recorded when a booking is canceled: who did it, when, and how close to the start. */
+function cancelInfo(b, by, now = new Date()) {
+  return {
+    status: 'canceled',
+    canceledBy: by,
+    canceledAt: now,
+    canceledHoursBefore: Math.round(((bookingStart(b) - now) / HOUR_MS) * 10) / 10,
+  };
+}
+
 module.exports = {
+  bookingStart,
+  rescheduleDeadline,
+  cancelInfo,
   dropPastSlots,
   localISO,
   nextOpenSlot,

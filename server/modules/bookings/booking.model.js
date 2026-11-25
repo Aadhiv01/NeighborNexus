@@ -40,6 +40,10 @@ const BookingSchema = new mongoose.Schema(
       type: [{ date: Date, startTime: String, endTime: String, at: Date, _id: false }],
       default: [],
     },
+    // Recorded when a booking is canceled, so cancellations can be understood later.
+    canceledBy: { type: String, enum: ['member', 'provider'] },
+    canceledAt: { type: Date },
+    canceledHoursBefore: { type: Number },
     // Set once the reminder has gone out. Cleared by a reschedule so a new reminder is sent.
     reminderSentAt: { type: Date },
   },

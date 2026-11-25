@@ -15,6 +15,8 @@ const schema = z.object({
   APP_URL: z.string().default('http://localhost:3001'),
   // Set REMINDERS=off to stop this process from sending reminders (for example on a second instance).
   REMINDERS: z.enum(['on', 'off']).default('on'),
+  // Members can reschedule until this many hours before the start. Cancelling is always allowed.
+  RESCHEDULE_NOTICE_HOURS: z.coerce.number().min(0).default(12),
 });
 
 const env = schema.parse(process.env);

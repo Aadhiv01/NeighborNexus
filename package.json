@@ -13,7 +13,8 @@
     "reminders": "node server/scripts/reminders.js",
     "check:reminders": "node server/scripts/check-reminders.js",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "check:policies": "node server/scripts/check-policies.js"
   },
   "keywords": [],
   "author": "",

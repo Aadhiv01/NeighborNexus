@@ -4,7 +4,8 @@ const authenticate = require('../../middleware/auth');
 const validate = require('../../lib/validate');
 const Booking = require('./booking.model');
 const ServiceProvider = require('../providers/provider.model');
-const { startOfDayUTC, slotsForDay, toMinutes, localISO, dropPastSlots } = require('./slots');
+const { startOfDayUTC, slotsForDay, toMinutes, localISO, dropPastSlots, rescheduleDeadline, cancelInfo } = require('./slots');
+const config = require('../../lib/config');
 const schemas = require('./booking.schemas');
 const { notifyBooking } = require('../notifications/notify');
 const { formatDate, formatTime } = require('../../lib/format');
@@ -134,7 +135,11 @@ router.get('/', authenticate, async (req, res) => {
     .populate('serviceProviderId', 'name location')
     .lean();
 
-  return res.json(bookings);
+  // Members are told when rescheduling closes, so the screen never has to guess.
+  const withDeadline = bookings.map((b) =>
+    req.user.type === PROVIDER_TYPE ? b : { ...b, rescheduleDeadline: rescheduleDeadline(b, config.RESCHEDULE_NOTICE_HOURS) }
+  );
+  return res.json(withDeadline);
 });
 
 // GET /api/bookings/:id
@@ -177,7 +182,8 @@ router.put(
         .json({ msg: `Cannot move a ${booking.status} booking to ${status}` });
     }
 
-    booking.status = status;
+    if (status === 'canceled') booking.set(cancelInfo(booking, isOwner && !isProvider ? 'member' : 'provider'));
+    else booking.status = status;
     if (status === 'completed' && timeSpent != null) booking.timeSpent = timeSpent;
 
     await booking.save();
@@ -203,6 +209,13 @@ router.post(
     if (!isOwner) return res.status(403).json({ msg: 'Only the member who booked can reschedule' });
     if (booking.status !== 'upcoming') {
       return res.status(409).json({ msg: 'Only upcoming bookings can be rescheduled' });
+    }
+
+    // Late changes hurt the provider, who has kept the time free. Cancelling stays open on purpose.
+    if (new Date() > rescheduleDeadline(booking, config.RESCHEDULE_NOTICE_HOURS)) {
+      return res.status(409).json({
+        msg: `Rescheduling closes ${config.RESCHEDULE_NOTICE_HOURS} hours before the start. You can still cancel.`,
+      });
     }
 
     const day = startOfDayUTC(date);
@@ -264,7 +277,7 @@ router.delete('/:id', authenticate, validate({ params: schemas.idParam }), async
     return res.status(409).json({ msg: 'Only upcoming bookings can be canceled' });
   }
 
-  booking.status = 'canceled';
+  booking.set(cancelInfo(booking, isOwner ? 'member' : 'provider'));
   await booking.save();
 
   live.publish(booking.serviceProviderId, {});

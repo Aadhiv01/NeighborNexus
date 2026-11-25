@@ -40,6 +40,7 @@ jobs:
           for i in $(seq 1 30); do curl -sf "$API_URL/health" && break; sleep 1; done
       - run: npm run smoke
       - run: npm run check:reminders
+      - run: npm run check:policies
 
   client:
     name: Client (types, build)
