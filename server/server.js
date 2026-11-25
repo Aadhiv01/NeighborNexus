@@ -9,6 +9,7 @@ const logger = require('./lib/logger');
 const authRoutes = require('./modules/auth/auth.routes');
 const providerRoutes = require('./modules/providers/provider.routes');
 const bookingRoutes = require('./modules/bookings/booking.routes');
+const statsRoutes = require('./modules/stats/stats.routes');
 const notificationRoutes = require('./modules/notifications/notification.routes');
 const live = require('./lib/live');
 const { sendDueReminders } = require('./modules/notifications/reminders');
@@ -44,6 +45,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/serviceprovider', providerRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/stats', statsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ msg: 'Not found' });

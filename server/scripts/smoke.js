@@ -323,6 +323,17 @@ async function main() {
     if (winner) await api(`/api/bookings/${winner.data._id}`, { method: 'DELETE', token: winner.data.user === login.data.user.id ? memberToken : samTok });
   }
 
+  // ── public stats for the landing page ────────────────────────────────
+  {
+    const st = await api('/api/stats');
+    check('public stats are available without signing in', st.status === 200 && typeof st.data.providers === 'number');
+    check('stats count providers and group prices by category',
+      st.data.providers === providers.data.length && st.data.categories.length > 0 &&
+        st.data.categories.every((c) => c.minPrice <= c.avgPrice && c.avgPrice <= c.maxPrice));
+    check('stats give the next 7 days of openings', st.data.openings.length === 7 && st.data.openings.every((o) => o.slots >= 0));
+    check('stats carry nothing about individual people or bookings', !JSON.stringify(st.data).match(/email|userId|"user"|password/i));
+  }
+
   // ── next available and near me ────────────────────────────────────────
   const withNext = providers.data.filter((p) => p.nextAvailable);
   check(
