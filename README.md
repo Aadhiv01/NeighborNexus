@@ -4,7 +4,7 @@ A community services marketplace. Members browse local service providers, see
 real availability, and book a slot. Providers manage their services, weekly
 availability, and incoming bookings.
 
-Built with **Express + MongoDB** on the API and **React 18 + Vite + TanStack
+Built with **Express + MongoDB** on the API and **React 19 + Vite 8 + TanStack
 Query** on the client.
 
 ---
@@ -24,7 +24,7 @@ flows for both roles were exercised against the running app.
 
 ## Quick start
 
-**Requirements:** Node 18+, a MongoDB instance (local `mongod` or Atlas).
+**Requirements:** Node 22.18+ (the `.nvmrc` pins 24), a MongoDB instance (local `mongod` or Atlas).
 
 ```bash
 # 1. Install
@@ -85,16 +85,27 @@ ok   canceling returns the slot to availability
 
 ### Client stack
 
-- **Vite 7** — dev server and build (Create React App is deprecated)
+- **Vite 8** (Rolldown) with the **React Compiler** enabled in `vite.config.ts`; TypeScript 7
 - **TanStack Query v5** — server state; query keys `["providers"]`,
   `["provider", userId]`, `["slots", providerId, serviceId, date]`,
   `["bookings"]`, `["providerBookings"]`, `["providerProfile"]`
-- **React Router 6** — public discovery routes, role-gated dashboards via
+- **React Router 7** — public discovery routes, role-gated dashboards via
   `<Outlet />`
-- **PrimeReact** — tables, dialogs, inputs; page-level code splitting via
-  `React.lazy`
-- **Tailwind v4** — available for new UI; existing pages use the small style
-  token module in `src/styles/ui.js`
+- **Base UI** for the hard accessibility pieces (dialogs and confirmations). Everything else
+  is a small in-house kit in `src/ui` (buttons, fields, cards, toasts, donut chart), built on
+  semantic HTML. PrimeReact, styled-components, Chart.js and react-icons are gone.
+- **Tailwind v4** with design tokens in `src/theme/theme.css`: palette, type, mode and corners
+  are data attributes on `<html>`. The default look is Paper palette, Schibsted Grotesk and
+  Figtree, light mode, soft corners.
+- **TypeScript strict** across the client. API calls and query keys live in `src/lib/api.ts`.
+- **View Transitions**: provider cards morph into the detail page (`<Link viewTransition>`).
+- **Theme lab** at `/lab` (temporary) — try palettes, type pairings, light/dark and
+  corner styles live, with a contrast checker. Delete `src/pages/ThemeLab` and the `/lab`
+  route when you no longer need it. `npm --prefix client run dev`, then
+  open http://localhost:3001/lab
+
+- **MapLibre** (loaded only when someone opens the Map view) with CARTO's light basemap. Pins are
+  real buttons, so the map works with a keyboard, and the list always has the same information.
 
 ### Data model
 
@@ -120,6 +131,31 @@ gets a duplicate-key error, which the error handler converts to `409`.
 Application-level "is it free?" checks are still done for a friendly message,
 but the index is the actual guarantee.
 
+**Next available is computed on the server in one pass.** Discovery looks 14 days ahead for each
+provider using a single bookings query for all of them, then drops anything earlier than now today.
+It assumes the server and providers share a timezone, because times are stored as plain `HH:mm`.
+
+**Nearby search uses MongoDB geo features.** `ServiceProvider.geo` is an optional GeoJSON point with a
+`2dsphere` index, queried with `$geoNear` (which must be the first pipeline stage). Providers choose to
+share a location, and the server rounds it to about 1 km before storing it, so an exact address is
+never published. A visitor's own position is used for the query and never stored.
+
+**Rescheduling is one guarded update.** A member moves their own upcoming booking; the new time is
+checked against the provider's open slots with the booking's *own* current time treated as free (so
+shifting by 30 minutes works), and the same unique index that stops double booking settles any race.
+Where it used to be is kept in `reschedules`, so nothing is lost.
+
+**Reminders go out once.** A reminder is due 24 hours before a booking that was made at least 24 hours
+ahead, or 2 hours before one made the same day; a booking made less than 2 hours ahead gets none. A
+reschedule restarts that clock. Each booking is claimed with one atomic update, so several server
+instances can run the loop and only one will send (`check:reminders` proves this with concurrent
+senders). Notifications are stored for the in-app Updates page and also emailed. Email uses SMTP when
+`SMTP_URL` is set; without it messages are built and logged, never sent. Like "next available", timing
+assumes the server and providers share a timezone.
+
+**"Today" is the local calendar date.** Comparing against the UTC date told evening users in western
+timezones that today had already passed; past times earlier today are also no longer offered.
+
 **Cancelling frees the slot.** Because the index is partial, a booking that
 moves to `canceled` or `completed` no longer occupies the slot.
 
@@ -141,6 +177,26 @@ current state — not a confusing `409`.
 
 ---
 
+### Server layout
+
+```
+server/
+  server.js            app setup, error handler, graceful shutdown
+  lib/                 config (Zod-validated env), logger (Pino), validate, rate-limit
+  middleware/auth.js   bearer token -> req.user
+  modules/
+    auth/              routes + Zod schemas
+    providers/         routes, schemas, model
+    bookings/          routes, schemas, model, slot maths
+    users/             model
+  scripts/             seed.js, smoke.js
+```
+
+Request bodies, queries and params are validated with Zod through one
+`validate()` middleware. Express 5 forwards rejected promises to the central
+error handler, so route handlers do not need `try/catch`. Read endpoints use
+`.lean()`. Login and signup are rate limited.
+
 ## API
 
 All routes are prefixed with `/api`.
@@ -157,7 +213,7 @@ All routes are prefixed with `/api`.
 
 | Method | Path | Access | Purpose |
 |---|---|---|---|
-| `GET` | `/` | public | Discover providers (`?category=&location=&q=`) |
+| `GET` | `/` | public | Discover providers (`?category=&location=&q=&lat=&lng=&radiusKm=`). Each result has `nextAvailable`; with `lat` and `lng` results are nearest first with `distanceMeters` |
 | `GET` | `/services` | provider | List own services |
 | `POST` | `/services` | provider | Add a service |
 | `PUT` | `/services/:serviceId` | provider | Edit a service |
@@ -175,22 +231,34 @@ All routes are prefixed with `/api`.
 | Method | Path | Access | Purpose |
 |---|---|---|---|
 | `GET` | `/slots` | public | Free slots (`?serviceProviderId=&serviceId=&date=`) |
-| `POST` | `/` | bearer | Create a booking |
+| `POST` | `/` | member | Create a booking (providers get 403) |
 | `GET` | `/` | bearer | My bookings (member) or incoming (provider) |
 | `GET` | `/:id` | owner/provider | One booking |
 | `PUT` | `/:id` | owner/provider | Status transition |
+| `POST` | `/:id/reschedule` | owner (member) | Move an upcoming booking to another open time |
 | `DELETE` | `/:id` | owner/provider | Cancel |
 
 ---
+
+### Notifications: `/api/notifications` (bearer)
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/` | My latest 50, plus `unread` count |
+| `PUT` | `/read-all` | Mark everything read |
+| `PUT` | `/:id/read` | Mark one read (only your own) |
 
 ## Scripts
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | API with nodemon |
+| `npm run dev` | API with `node --watch` |
 | `npm start` | API |
 | `npm run seed` | Reset and seed demo data |
-| `npm run smoke` | End-to-end API checks |
+| `npm run smoke` | End-to-end API checks against a running API |
+| `npm test` | Unit tests (reminder timing, today and past slots) |
+| `npm run check:reminders` | Reminder sending against a real database, including races |
+| `npm run reminders` | Send due reminders once and exit (for cron, when the web process runs with `REMINDERS=off`) |
 | `npm --prefix client run dev` | Client dev server (port 3001) |
 | `npm --prefix client run build` | Production build to `client/dist` |
 | `npm --prefix client run preview` | Serve the production build |
