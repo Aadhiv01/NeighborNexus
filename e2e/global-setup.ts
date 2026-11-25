@@ -5,6 +5,7 @@ import { E2E } from "../playwright.config";
 
 const ACCOUNTS = {
   member: "alex@example.com",
+  member2: "sam@example.com",
   provider: "maya@example.com",
 };
 

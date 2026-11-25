@@ -11,7 +11,7 @@ const DAYS_AHEAD = 14;
 
 /** Day strip plus time grid, shared by booking and rescheduling. */
 export default function SlotPicker({
-  name, dateStr, onDate, slots, loading, selected, onSelect, dayLegend, timeLegend,
+  name, dateStr, onDate, slots, loading, selected, onSelect, dayLegend, timeLegend, live,
 }: {
   /** Makes radio group names unique when two pickers are on screen. */
   name: string;
@@ -23,6 +23,8 @@ export default function SlotPicker({
   onSelect: (s: Slot) => void;
   dayLegend: string;
   timeLegend: string;
+  /** Connection state of the live stream, if one is attached. */
+  live?: "connecting" | "live" | "reconnecting";
 }) {
   const days = useMemo(() => Array.from({ length: DAYS_AHEAD }, (_, n) => addDays(new Date(), n)), []);
 
@@ -91,7 +93,15 @@ export default function SlotPicker({
             Nothing open on {formatBookingDate(dateStr + "T00:00:00Z")}. Try another day.
           </p>
         )}
-        <p className="mb-0 mt-3 text-xs text-ink-soft">Times are in the provider’s local time.</p>
+        <p className="mb-0 mt-3 flex flex-wrap items-center gap-x-3 text-xs text-ink-soft">
+          <span>Times are in the provider’s local time.</span>
+          {live && (
+            <span className="inline-flex items-center gap-1.5" role="status">
+              <span className={`h-2 w-2 rounded-full ${live === "live" ? "bg-good" : "bg-ink-soft"}`} aria-hidden />
+              {live === "live" ? "Updating live" : live === "reconnecting" ? "Reconnecting…" : "Connecting…"}
+            </span>
+          )}
+        </p>
       </fieldset>
     </>
   );

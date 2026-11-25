@@ -2,6 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 export const MEMBER = "e2e/.auth/member.json";
+export const MEMBER2 = "e2e/.auth/member2.json";
 export const PROVIDER = "e2e/.auth/provider.json";
 
 export async function logInThroughTheForm(page: Page, email: string, password = "password123") {

@@ -15,8 +15,10 @@ import type {
   Weekday,
 } from "./types";
 
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
+
 const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api",
+  baseURL: API_BASE,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -25,6 +27,9 @@ http.interceptors.request.use((config) => {
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+/** True when the server refused because the time was taken (409). */
+export const isConflict = (err: unknown) => isAxiosError(err) && err.response?.status === 409;
 
 /** The server answers errors as { msg }. Prefer that over axios's generic text. */
 export function errorMessage(err: unknown, fallback = "Something went wrong. Please try again.") {

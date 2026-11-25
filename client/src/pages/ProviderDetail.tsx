@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, errorMessage, qk } from "../lib/api";
+import { api, errorMessage, isConflict, qk } from "../lib/api";
+import { useLiveSlots } from "../lib/useLiveSlots";
 import { addDays, formatBookingDate, formatTime, isoDate, money } from "../lib/date";
 import type { Booking, Slot } from "../lib/types";
 import { useUser } from "../auth/UserContext";
@@ -22,6 +23,7 @@ export default function ProviderDetail() {
   const [date, setDate] = useState(() => addDays(new Date(), 1));
   const [slot, setSlot] = useState<Slot | null>(null);
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
+  const [takenNotice, setTakenNotice] = useState(false);
 
   const { data: provider, isPending, isError } = useQuery({
     queryKey: qk.provider(providerId),
@@ -40,6 +42,8 @@ export default function ProviderDetail() {
     enabled: Boolean(provider?._id && serviceId),
   });
 
+  const live = useLiveSlots(provider?._id);
+
   const book = useMutation({
     mutationFn: api.createBooking,
     onSuccess: (booking) => {
@@ -49,8 +53,23 @@ export default function ProviderDetail() {
       queryClient.invalidateQueries({ queryKey: qk.bookings });
     },
     // Someone else may have taken the slot first. Refresh so it disappears.
-    onError: () => queryClient.invalidateQueries({ queryKey: qk.slotsAll }),
+    onError: (err) => {
+      queryClient.invalidateQueries({ queryKey: qk.slotsAll });
+      if (isConflict(err)) {
+        setSlot(null);
+        setTakenNotice(true);
+      }
+    },
   });
+
+  // If the time someone has chosen disappears from a fresh list, somebody else just took it.
+  const freshSlots = slotsQuery.data?.slots;
+  useEffect(() => {
+    if (slot && freshSlots && !slotsQuery.isFetching && !freshSlots.some((s) => s.start === slot.start)) {
+      setSlot(null);
+      setTakenNotice(true);
+    }
+  }, [slot, freshSlots, slotsQuery.isFetching]);
 
   if (isPending) return <PageLoading label="Loading provider" />;
 
@@ -67,6 +86,7 @@ export default function ProviderDetail() {
     setServiceChoice(id);
     setSlot(null);
     setConfirmed(null);
+    setTakenNotice(false);
   };
   const chooseDate = (d: Date) => {
     setDate(d);
@@ -159,9 +179,13 @@ export default function ProviderDetail() {
                 slots={slots}
                 loading={loadingSlots}
                 selected={slot}
-                onSelect={setSlot}
+                onSelect={(s) => {
+                  setSlot(s);
+                  setTakenNotice(false);
+                }}
                 dayLegend="2. Pick a day"
                 timeLegend="3. Pick a time"
+                live={live}
               />
             </>
           )}
@@ -199,7 +223,12 @@ export default function ProviderDetail() {
                   You can cancel any time from My bookings and the time goes back on offer.
                 </p>
 
-                {book.isError && <div className="mt-4"><ErrorNote>{errorMessage(book.error)}</ErrorNote></div>}
+                {takenNotice && (
+                  <div className="mt-4">
+                    <ErrorNote>Someone just booked that time. We’ve refreshed the list, so please pick another.</ErrorNote>
+                  </div>
+                )}
+                {book.isError && !isConflict(book.error) && <div className="mt-4"><ErrorNote>{errorMessage(book.error)}</ErrorNote></div>}
 
                 {isProviderUser ? (
                   <div className="mt-5 rounded-ui bg-surface p-4 text-sm leading-relaxed">

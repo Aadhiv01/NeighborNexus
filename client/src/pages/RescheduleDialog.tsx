@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, errorMessage, qk } from "../lib/api";
+import { api, errorMessage, isConflict, qk } from "../lib/api";
+import { useLiveSlots } from "../lib/useLiveSlots";
 import { formatBookingDate, formatTime, isoDate } from "../lib/date";
 import type { Booking, Slot } from "../lib/types";
 import { Button } from "../ui/Button";
@@ -28,6 +29,8 @@ function RescheduleForm({ booking, onClose }: { booking: Booking; onClose: () =>
     enabled: Boolean(providerId),
   });
 
+  const live = useLiveSlots(providerId);
+
   const move = useMutation({
     mutationFn: () => api.rescheduleBooking(booking._id, { date: dateStr, startTime: slot!.start, endTime: slot!.end }),
     onSuccess: () => {
@@ -37,7 +40,10 @@ function RescheduleForm({ booking, onClose }: { booking: Booking; onClose: () =>
       onClose();
     },
     // If someone just took the time, refresh so it disappears from the grid.
-    onError: () => queryClient.invalidateQueries({ queryKey: qk.slotsAll }),
+    onError: (err) => {
+      queryClient.invalidateQueries({ queryKey: qk.slotsAll });
+      if (isConflict(err)) setSlot(null);
+    },
   });
 
   const unchanged = slot && dateStr === currentDate && slot.start === booking.startTime;
@@ -66,9 +72,16 @@ function RescheduleForm({ booking, onClose }: { booking: Booking; onClose: () =>
         onSelect={(s) => { setSlot(s); move.reset(); }}
         dayLegend="Pick a new day"
         timeLegend="Pick a new time"
+        live={live}
       />
 
-      {move.isError && <div className="mt-4"><ErrorNote>{errorMessage(move.error)}</ErrorNote></div>}
+      {move.isError && (
+        <div className="mt-4">
+          <ErrorNote>
+            {isConflict(move.error) ? "Someone just booked that time. We’ve refreshed the list, so please pick another." : errorMessage(move.error)}
+          </ErrorNote>
+        </div>
+      )}
 
       <div className="mt-6 flex justify-end gap-2">
         <Button variant="secondary" onClick={onClose}>Keep current time</Button>
