@@ -6,6 +6,7 @@ import { useSignup } from "../auth/useAuth";
 import { Button } from "../ui/Button";
 import { PasswordField, TextField } from "../ui/Fields";
 import { ErrorNote } from "../ui/Feedback";
+import { CheckIcon } from "../ui/Icons";
 import AuthLayout from "./AuthLayout";
 
 const ROLES: { value: UserType; title: string; text: string }[] = [
@@ -27,9 +28,11 @@ export default function Signup() {
   const mismatch = confirm.length > 0 && form.password !== confirm;
   const set = (field: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [field]: value }));
 
+  const busy = signup.isPending || signup.isSuccess;
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (form.password !== confirm) return;
+    if (busy || form.password !== confirm) return;
     signup.mutate(form);
   };
 
@@ -42,6 +45,7 @@ export default function Signup() {
     >
       <h2 className="m-0 font-display text-3xl font-semibold">Create your account</h2>
       <form onSubmit={submit} className="mt-6 space-y-5">
+        <fieldset disabled={busy} className="min-w-0 space-y-5 border-0 p-0">
         <fieldset className="min-w-0 border-0 p-0">
           <legend className="mb-2 text-sm font-semibold">I am joining as</legend>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -89,10 +93,14 @@ export default function Signup() {
           />
         </div>
 
+        </fieldset>
         {signup.isError && <ErrorNote>{errorMessage(signup.error)}</ErrorNote>}
-        <Button type="submit" size="lg" className="w-full" loading={signup.isPending} disabled={mismatch}>
-          Create account
+        <Button type="submit" size="lg" className="w-full" loading={signup.isPending} disabled={mismatch} icon={signup.isSuccess ? <CheckIcon /> : undefined}>
+          {signup.isPending ? "Creating your account…" : signup.isSuccess ? "Account created" : "Create account"}
         </Button>
+        <span role="status" className="sr-only">
+          {signup.isPending ? "Creating your account" : signup.isSuccess ? "Account created. Opening your dashboard." : ""}
+        </span>
       </form>
       <p className="mb-0 mt-6 text-center text-ink-soft">
         Already have an account?{" "}

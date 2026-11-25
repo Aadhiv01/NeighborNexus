@@ -51,7 +51,7 @@ function NavLabel({ item }: { item: NavItem }) {
 
 export default function Header() {
   const { user } = useUser();
-  const logout = useLogout();
+  const { logout, pending: loggingOut } = useLogout();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const unread = useNotifications().data?.unread ?? 0;
@@ -86,7 +86,7 @@ export default function Header() {
                 <Monogram name={user.name} size={32} />
                 <span className="max-w-[10rem] truncate">{user.name.split(" ")[0]}</span>
               </span>
-              <Button variant="secondary" size="sm" onClick={logout}>Log out</Button>
+              <Button variant="secondary" size="sm" loading={loggingOut} onClick={logout}>{loggingOut ? "Logging out…" : "Log out"}</Button>
             </>
           ) : (
             <>
@@ -117,8 +117,8 @@ export default function Header() {
             ))}
           </nav>
           {user ? (
-            <Button variant="secondary" className="w-full" onClick={logout}>
-              Log out ({user.name.split(" ")[0]})
+            <Button variant="secondary" className="w-full" loading={loggingOut} onClick={logout}>
+              {loggingOut ? "Logging out…" : `Log out (${user.name.split(" ")[0]})`}
             </Button>
           ) : (
             <div className="flex gap-2">
