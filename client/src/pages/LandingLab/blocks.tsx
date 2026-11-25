@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import type { Provider, Stats } from "../../lib/types";
 import { money } from "../../lib/date";
-import { Neighbourhood } from "../../ui/Neighbourhood";
 import { LinkButton } from "../../ui/Button";
 
 /** Full width horizontal band. Each tone is a different background, so sections never blur together. */
@@ -17,62 +16,12 @@ export function Band({ tone = "plain", id, label, children, className = "" }: {
   );
 }
 
-/** Fades and lifts into view once. No movement at all for people who ask for reduced motion. */
-export function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
-  const reduce = useReducedMotion();
-  return (
-    <motion.div
-      className={className}
-      initial={reduce ? false : { opacity: 0, y: 28 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.55, delay, ease: "easeOut" }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 export function Kicker({ children, tone = "plain" }: { children: ReactNode; tone?: "plain" | "ink" }) {
   return <p className={`m-0 mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] ${tone === "ink" ? "text-accent-soft" : "text-accent"}`}>{children}</p>;
 }
 
 export function H2({ children, tone = "plain" }: { children: ReactNode; tone?: "plain" | "ink" }) {
   return <h2 className={`m-0 max-w-3xl font-display text-3xl font-bold leading-[1.08] tracking-tight md:text-5xl ${tone === "ink" ? "text-bg" : ""}`}>{children}</h2>;
-}
-
-/** The illustration drifts a little as the page scrolls. */
-export function ParallaxArt({ className = "" }: { className?: string }) {
-  const reduce = useReducedMotion();
-  const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 600], [0, -48]);
-  return (
-    <motion.div style={reduce ? undefined : { y }} className={className}>
-      <Neighbourhood className="w-full" />
-    </motion.div>
-  );
-}
-
-/** Slowly scrolling strip of the kinds of help on offer. Pure decoration, so it is hidden from screen readers. */
-export function Marquee({ items }: { items: string[] }) {
-  if (!items.length) return null;
-  const row = [...items, ...items, ...items, ...items];
-  return (
-    <div aria-hidden className="overflow-hidden border-y border-line bg-surface py-4">
-      <div className="nn-motion flex w-max gap-10 whitespace-nowrap font-display text-2xl font-semibold" style={{ animation: "nn-marquee 40s linear infinite" }}>
-        {[0, 1].map((k) => (
-          <div key={k} className="flex gap-10">
-            {row.map((t, i) => (
-              <span key={i} className="flex items-center gap-10">
-                {t}
-                <span className="h-2 w-2 rounded-full bg-accent" />
-              </span>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 /** Open times on each of the next 7 days, across every provider. Real numbers from /api/stats. */
@@ -138,21 +87,26 @@ export function PriceRanges({ stats }: { stats?: Stats }) {
                 style={{ left: `${left}%`, width: `${width}%`, transformOrigin: "left" }}
                 className="absolute top-0 h-full rounded-full bg-accent"
               />
-              <span className="absolute top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-ink" style={{ left: `${(c.avgPrice / scale) * 100}%` }} />
+              {c.maxPrice !== c.minPrice && <span className="absolute top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-ink" style={{ left: `${(c.avgPrice / scale) * 100}%` }} />}
             </div>
             <p className="m-0 text-sm tabular-nums sm:text-right">
               <strong>{money(c.minPrice)}</strong>{c.maxPrice !== c.minPrice && <> to <strong>{money(c.maxPrice)}</strong></>}
-              <span className="block text-ink-soft">average {money(c.avgPrice)}</span>
+              {c.maxPrice !== c.minPrice && <span className="block text-ink-soft">average {money(c.avgPrice)}</span>}
             </p>
           </li>
         );
       })}
+      <li className="m-0 text-sm text-ink-soft">
+        Based on what {stats?.providers} {stats?.providers === 1 ? "neighbour has" : "neighbours have"} listed so far. It fills in as more join.
+      </li>
     </ul>
   );
 }
 
 /** Big animated number with a label. */
 export function Metric({ value, label, suffix = "", tone = "plain" }: { value: number; label: string; suffix?: string; tone?: "plain" | "ink" }) {
+  // A zero says nothing and looks like a placeholder, so leave it out.
+  if (value <= 0) return null;
   return (
     <div>
       <p className={`m-0 font-display text-5xl font-bold leading-none md:text-7xl ${tone === "ink" ? "text-accent-soft" : "text-accent"}`}>
@@ -303,15 +257,15 @@ export function ProviderBand() {
   return (
     <Band tone="ink" label="For providers">
       <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-[1.3fr_1fr]">
-        <Reveal>
+        <div>
           <Kicker tone="ink">For providers</Kicker>
           <H2 tone="ink">Do the work? Take bookings your way.</H2>
           <p className="mb-0 mt-5 max-w-xl text-lg leading-relaxed text-bg">
             Set your weekly hours once, and members can only book times you are free. You are told about every booking,
             move and cancellation, you see your own record, and it costs nothing to list yourself.
           </p>
-        </Reveal>
-        <Reveal delay={0.1}>
+        </div>
+        <div>
           <ul className="m-0 grid list-none gap-3 p-0 text-bg">
             {["Your hours, your prices", "No double booking, ever", "Live updates when someone books", "Free to list"].map((t) => (
               <li key={t} className="flex items-center gap-3 rounded-card border border-bg/30 px-5 py-4 text-lg font-semibold">
@@ -323,7 +277,7 @@ export function ProviderBand() {
           <div className="mt-6 flex flex-wrap gap-3">
             <LinkButton to="/signup" size="lg" className="!bg-accent-soft !text-ink">Offer your services</LinkButton>
           </div>
-        </Reveal>
+        </div>
       </div>
     </Band>
   );
@@ -332,14 +286,25 @@ export function ProviderBand() {
 export function FinalCta() {
   return (
     <Band tone="tint" label="Get started">
-      <Reveal className="text-center">
+      <div>
         <H2>Your neighbours are free to help.</H2>
         <p className="mx-auto mb-8 mt-4 max-w-xl text-lg text-ink-soft">Find someone, pick a real time, and be done in under a minute.</p>
         <div className="flex flex-wrap justify-center gap-3">
           <LinkButton to="/services" size="lg">Find help now</LinkButton>
           <LinkButton to="/signup" variant="secondary" size="lg">Create an account</LinkButton>
         </div>
-      </Reveal>
+      </div>
     </Band>
+  );
+}
+
+/** Said plainly while the neighbourhood is small, driven by the real count. */
+export function FoundingNote({ count, tone = "plain" }: { count: number; tone?: "plain" | "ink" }) {
+  if (count >= 25) return null;
+  return (
+    <p className={`mb-0 mt-5 max-w-xl text-sm leading-relaxed ${tone === "ink" ? "text-bg" : "text-ink-soft"}`}>
+      We are just getting started here, with {count} {count === 1 ? "neighbour" : "neighbours"} listed so far. Every number on this
+      page is live from the database, and anything we cannot back up is left out.
+    </p>
   );
 }

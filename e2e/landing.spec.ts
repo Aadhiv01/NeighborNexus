@@ -81,6 +81,35 @@ test.describe("landing lab", () => {
     await expect(page.getByText("Not yet. Each service shows its price")).toBeHidden();
   });
 
+  test("every concept is honest about being small and gives providers a path in the hero", async ({ page }) => {
+    for (const c of CONCEPTS) {
+      await page.goto("/lab/landing");
+      await page.getByRole("radio", { name: c.label }).check({ force: true });
+      await expect(page.getByText(/We are just getting started here, with 4 neighbours listed so far/)).toBeVisible();
+      await page.getByRole("link", { name: "Set your weekly hours" }).first().click();
+      await expect(page).toHaveURL(/\/signup$/);
+    }
+  });
+
+  test("a category with one listing shows its price without an invented average", async ({ page }) => {
+    await page.goto("/lab/landing");
+    // Handyman has a single service at $70: show the price, not "average $70".
+    await expect(page.getByText("average $70")).toHaveCount(0);
+    await expect(page.getByText("$70", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/Based on what 4 neighbours have listed so far/)).toBeVisible();
+  });
+
+  test("nothing on the page moves by itself", async ({ page }) => {
+    await page.goto("/lab/landing");
+    const moving = await page.evaluate(
+      () => [...document.querySelectorAll("*")].filter((el) => {
+        const n = getComputedStyle(el).animationName;
+        return n !== "none" && !n.includes("nn-pulse");
+      }).length
+    );
+    expect(moving).toBe(0);
+  });
+
   test("the choice is remembered between visits", async ({ page }) => {
     await page.goto("/lab/landing");
     await page.getByRole("radio", { name: "B · Live board" }).check({ force: true });

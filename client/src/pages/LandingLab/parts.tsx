@@ -30,6 +30,12 @@ export function HeroSearch({ categories, tone = "plain" }: { categories: string[
         </span>
         <Button type="submit" size="lg">Find help</Button>
       </form>
+      <p className={`mb-0 mt-3 text-sm ${tone === "ink" ? "text-bg" : "text-ink-soft"}`}>
+        Do the work?{" "}
+        <Link to="/signup" className={`font-semibold underline underline-offset-4 ${tone === "ink" ? "text-accent-soft" : "text-accent"}`}>
+          Set your weekly hours
+        </Link>
+      </p>
       {categories.length > 0 && (
         <p className={`mb-0 mt-3 flex flex-wrap items-center gap-2 text-sm ${tone === "ink" ? "text-bg" : "text-ink-soft"}`}>
           Popular:

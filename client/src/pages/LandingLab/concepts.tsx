@@ -6,7 +6,8 @@ import { addDays, describeNext, formatTime, isoDate } from "../../lib/date";
 import { LinkButton } from "../../ui/Button";
 import { EmptyState } from "../../ui/Feedback";
 import { HeroSearch, HowItWorks, categoriesOfAll } from "./parts";
-import { Band, Faq, FinalCta, H2, Kicker, Marquee, Metric, OpeningsChart, ParallaxArt, PriceRanges, ProviderBand, Reveal, StickySteps } from "./blocks";
+import { Band, Faq, FinalCta, FoundingNote, H2, Kicker, Metric, OpeningsChart, PriceRanges, ProviderBand, StickySteps } from "./blocks";
+import { Neighbourhood } from "../../ui/Neighbourhood";
 
 interface P { providers: Provider[]; stats?: Stats; loading: boolean }
 
@@ -36,13 +37,13 @@ export function EditorialConcept({ providers, stats }: P) {
               change your mind without a phone call.
             </p>
             <HeroSearch categories={cats} />
+            <FoundingNote count={stats?.providers ?? providers.length} />
           </div>
-          <ParallaxArt className="w-full max-w-[560px] justify-self-center" />
+          <Neighbourhood className="w-full max-w-[560px] justify-self-center" />
         </div>
       </Band>
-      <Marquee items={cats} />
       <Band tone="tint" label="The neighbourhood in numbers">
-        <Reveal><Kicker>Right now</Kicker><H2>The neighbourhood, in numbers.</H2></Reveal>
+        <div><Kicker>Right now</Kicker><H2>The neighbourhood, in numbers.</H2></div>
         <div className="mt-12 grid grid-cols-2 gap-8 md:grid-cols-4">
           <Metric value={stats?.providers ?? providers.length} label="neighbours listed" />
           <Metric value={cats.length} label="kinds of help" />
@@ -52,16 +53,16 @@ export function EditorialConcept({ providers, stats }: P) {
         <div className="mt-14 rounded-card bg-surface p-6 md:p-10"><OpeningsChart stats={stats} /></div>
       </Band>
       <Band label="How it works">
-        <Reveal><Kicker>How it works</Kicker><H2>Three steps, no phone calls.</H2></Reveal>
+        <div><Kicker>How it works</Kicker><H2>Three steps, no phone calls.</H2></div>
         <div className="mt-14"><StickySteps providers={providers} /></div>
       </Band>
       <Band tone="tint" label="Typical prices">
-        <Reveal><Kicker>Know before you book</Kicker><H2>What things cost around here.</H2></Reveal>
+        <div><Kicker>Know before you book</Kicker><H2>What things cost around here.</H2></div>
         <p className="mb-10 mt-4 max-w-2xl text-lg text-ink-soft">The bar runs from the lowest to the highest price listed. The dark tick is the average.</p>
         <PriceRanges stats={stats} />
       </Band>
       <ProviderBand />
-      <Band label="Questions"><Reveal><Kicker>Good to know</Kicker><H2>Questions, answered plainly.</H2></Reveal><div className="mt-10"><Faq /></div></Band>
+      <Band label="Questions"><div><Kicker>Good to know</Kicker><H2>Questions, answered plainly.</H2></div><div className="mt-10"><Faq /></div></Band>
       <FinalCta />
     </>
   );
@@ -144,31 +145,31 @@ export function LiveBoardConcept({ providers, stats, loading }: P) {
           </div>
           {providers.length ? <Timeline providers={providers} /> : loading ? <p className="m-0 text-ink-soft">Loading…</p> : <NoData />}
         </div>
-        <div className="mt-8 max-w-2xl"><HeroSearch categories={cats} tone="ink" /></div>
+        <div className="mt-8 max-w-2xl"><HeroSearch categories={cats} tone="ink" /><FoundingNote tone="ink" count={stats?.providers ?? providers.length} /></div>
       </Band>
       <Band label="Openings this week">
         <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-[1.4fr_1fr]">
-          <Reveal><div className="rounded-card border border-line bg-surface p-6 md:p-8"><OpeningsChart stats={stats} /></div></Reveal>
-          <Reveal delay={0.1}>
+          <div><div className="rounded-card border border-line bg-surface p-6 md:p-8"><OpeningsChart stats={stats} /></div></div>
+          <div>
             <Kicker>This week</Kicker>
             <H2>{totalOpen(stats)} open times, waiting.</H2>
             <div className="mt-8 grid grid-cols-2 gap-6">
               <Metric value={stats?.providers ?? providers.length} label="neighbours" />
               <Metric value={freeToday(stats)} label="free today" />
             </div>
-          </Reveal>
+          </div>
         </div>
       </Band>
       <Band tone="tint" label="Typical prices">
-        <Reveal><Kicker>Price check</Kicker><H2>The going rate, by kind of help.</H2></Reveal>
+        <div><Kicker>Price check</Kicker><H2>The going rate, by kind of help.</H2></div>
         <div className="mt-10"><PriceRanges stats={stats} /></div>
       </Band>
       <Band label="How it works">
-        <Reveal><Kicker>How it works</Kicker><H2>Pick, book, done.</H2></Reveal>
+        <div><Kicker>How it works</Kicker><H2>Pick, book, done.</H2></div>
         <div className="mt-10"><HowItWorks /></div>
       </Band>
       <ProviderBand />
-      <Band tone="tint" label="Questions"><Reveal><Kicker>Good to know</Kicker><H2>Questions, answered plainly.</H2></Reveal><div className="mt-10"><Faq /></div></Band>
+      <Band tone="tint" label="Questions"><div><Kicker>Good to know</Kicker><H2>Questions, answered plainly.</H2></div><div className="mt-10"><Faq /></div></Band>
       <FinalCta />
     </>
   );
@@ -239,7 +240,7 @@ export function StreetConcept({ providers, stats }: P) {
         ) : (
           <NoData />
         )}
-        <div className="mt-8 max-w-2xl"><HeroSearch categories={cats} /></div>
+        <div className="mt-8 max-w-2xl"><HeroSearch categories={cats} /><FoundingNote count={stats?.providers ?? providers.length} /></div>
       </Band>
       <Band label="In numbers">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
@@ -250,17 +251,17 @@ export function StreetConcept({ providers, stats }: P) {
         </div>
       </Band>
       <Band tone="tint" label="How it works">
-        <Reveal><Kicker>How it works</Kicker><H2>Three steps, no phone calls.</H2></Reveal>
+        <div><Kicker>How it works</Kicker><H2>Three steps, no phone calls.</H2></div>
         <div className="mt-10"><HowItWorks /></div>
       </Band>
       <Band label="Openings and prices">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
-          <Reveal><Kicker>When</Kicker><h2 className="mb-6 mt-0 font-display text-3xl font-bold">Open times, day by day.</h2><OpeningsChart stats={stats} /></Reveal>
-          <Reveal delay={0.1}><Kicker>How much</Kicker><h2 className="mb-6 mt-0 font-display text-3xl font-bold">What things cost.</h2><PriceRanges stats={stats} /></Reveal>
+          <div><Kicker>When</Kicker><h2 className="mb-6 mt-0 font-display text-3xl font-bold">Open times, day by day.</h2><OpeningsChart stats={stats} /></div>
+          <div><Kicker>How much</Kicker><h2 className="mb-6 mt-0 font-display text-3xl font-bold">What things cost.</h2><PriceRanges stats={stats} /></div>
         </div>
       </Band>
       <ProviderBand />
-      <Band tone="tint" label="Questions"><Reveal><Kicker>Good to know</Kicker><H2>Questions, answered plainly.</H2></Reveal><div className="mt-10"><Faq /></div></Band>
+      <Band tone="tint" label="Questions"><div><Kicker>Good to know</Kicker><H2>Questions, answered plainly.</H2></div><div className="mt-10"><Faq /></div></Band>
       <FinalCta />
     </>
   );
