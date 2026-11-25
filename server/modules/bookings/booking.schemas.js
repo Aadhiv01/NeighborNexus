@@ -9,11 +9,19 @@ const slotsQuery = z.object({
   serviceProviderId: objectId('Invalid serviceProviderId'),
   serviceId: objectId('Invalid serviceId').optional(),
   date: isoDate,
+  // When a member is moving a booking, their own current time should show as free.
+  excludeBookingId: objectId('Invalid booking id').optional(),
 });
 
 const create = z.object({
   serviceProviderId: objectId('Invalid serviceProviderId'),
   serviceId: objectId('Invalid serviceId'),
+  date: isoDate,
+  startTime: hhmm('startTime must be HH:mm'),
+  endTime: hhmm('endTime must be HH:mm'),
+});
+
+const reschedule = z.object({
   date: isoDate,
   startTime: hhmm('startTime must be HH:mm'),
   endTime: hhmm('endTime must be HH:mm'),
@@ -27,4 +35,4 @@ const updateStatus = z.object({
   timeSpent: z.coerce.number().min(0).optional(),
 });
 
-module.exports = { slotsQuery, create, idParam, updateStatus };
+module.exports = { slotsQuery, create, reschedule, idParam, updateStatus };

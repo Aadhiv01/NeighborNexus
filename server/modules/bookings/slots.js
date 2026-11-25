@@ -94,7 +94,19 @@ function nextOpenSlot({ availability = [], durationMinutes = 60, bookingsFor, no
   return null;
 }
 
+/**
+ * Removes slots that have already started when `day` is today. "Today" means the local calendar
+ * date (the same date people see on a calendar), not the UTC date, so evening users are not
+ * told today is already over.
+ */
+function dropPastSlots(slots, day, now = new Date()) {
+  if (startOfDayUTC(day).getTime() !== startOfDayUTC(localISO(now)).getTime()) return slots;
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  return slots.filter((s) => toMinutes(s.start) > nowMinutes);
+}
+
 module.exports = {
+  dropPastSlots,
   localISO,
   nextOpenSlot,
   WEEKDAYS,

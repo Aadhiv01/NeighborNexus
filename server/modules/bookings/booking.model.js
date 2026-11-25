@@ -35,6 +35,11 @@ const BookingSchema = new mongoose.Schema(
       default: 'upcoming',
     },
     timeSpent: { type: Number, min: 0 },
+    // Where this booking used to be, oldest first. Kept so nothing is lost when someone moves it.
+    reschedules: {
+      type: [{ date: Date, startTime: String, endTime: String, at: Date, _id: false }],
+      default: [],
+    },
   },
   { timestamps: true }
 );

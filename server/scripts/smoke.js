@@ -215,6 +215,62 @@ async function main() {
   });
   check('member cannot edit another profile', badProfile.status === 403);
 
+  // ── reschedule ──────────────────────────────────────
+  {
+    const when = await findOpenDate(provider._id, serviceId);
+    const day = when.date;
+    const list = async (exclude = '') =>
+      (await api(`/api/bookings/slots?serviceProviderId=${provider._id}&serviceId=${serviceId}&date=${day}${exclude ? `&excludeBookingId=${exclude}` : ''}`)).data.slots;
+    const slots = await list();
+    const [s0, s1] = slots;
+    const last = slots[slots.length - 1];
+    const reschedule = (id, body, token = memberToken) =>
+      api(`/api/bookings/${id}/reschedule`, { method: 'POST', token, body });
+
+    const mine = await api('/api/bookings', {
+      method: 'POST', token: memberToken,
+      body: { serviceProviderId: provider._id, serviceId, date: day, startTime: s0.start, endTime: s0.end },
+    });
+    check('member can book the slot to be moved', mine.status === 201);
+    const id = mine.data?._id;
+
+    check('slots without exclude hide the booking\'s own time', !(await list()).some((x) => x.start === s0.start));
+    check('slots with exclude show the booking\'s own time as free', (await list(id)).some((x) => x.start === s0.start));
+
+    const moved = await reschedule(id, { date: day, startTime: s1.start, endTime: s1.end });
+    check(
+      'member can move a booking, even by overlapping their own time',
+      moved.status === 200 && moved.data.startTime === s1.start && moved.data.reschedules?.length === 1 &&
+        moved.data.reschedules[0].startTime === s0.start
+    );
+
+    const afterMove = (await list()).map((x) => x.start);
+    check('the old time is free again after moving', !afterMove.includes(s1.start) && afterMove.includes(s0.start) === (s0.end <= s1.start));
+    check('moving to the same time is rejected', (await reschedule(id, { date: day, startTime: s1.start, endTime: s1.end })).status === 400);
+
+    const provTok = (await api('/api/auth', { method: 'POST', body: { email: 'maya@example.com', password: 'password123' } })).data.token;
+    check('a provider cannot reschedule a member\'s booking', (await reschedule(id, { date: day, startTime: s0.start, endTime: s0.end }, provTok)).status === 403);
+
+    const samTok = (await api('/api/auth', { method: 'POST', body: { email: 'sam@example.com', password: 'password123' } })).data.token;
+    check('another member cannot move this booking', (await reschedule(id, { date: day, startTime: s0.start, endTime: s0.end }, samTok)).status === 403);
+
+    const sams = await api('/api/bookings', {
+      method: 'POST', token: samTok,
+      body: { serviceProviderId: provider._id, serviceId, date: day, startTime: last.start, endTime: last.end },
+    });
+    check('a second member books a different time', sams.status === 201);
+    check('moving onto a taken time is rejected', (await reschedule(id, { date: day, startTime: last.start, endTime: last.end })).status === 409);
+
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const localDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    check('moving to a past date is rejected', (await reschedule(id, { date: localDay(yesterday), startTime: s0.start, endTime: s0.end })).status === 400);
+    check('moving to a different length is rejected', (await reschedule(id, { date: day, startTime: s0.start, endTime: '23:59' })).status === 400);
+
+    const canceled = await api(`/api/bookings/${id}`, { method: 'DELETE', token: provTok });
+    check('a provider can cancel the booking', canceled.status === 200);
+    await api(`/api/bookings/${sams.data._id}`, { method: 'DELETE', token: samTok });
+  }
+
   // ── next available and near me ────────────────────────────────────────
   const withNext = providers.data.filter((p) => p.nextAvailable);
   check(

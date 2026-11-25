@@ -4,7 +4,7 @@ const authenticate = require('../../middleware/auth');
 const validate = require('../../lib/validate');
 const Booking = require('./booking.model');
 const ServiceProvider = require('../providers/provider.model');
-const { startOfDayUTC, slotsForDay, toMinutes } = require('./slots');
+const { startOfDayUTC, slotsForDay, toMinutes, localISO, dropPastSlots } = require('./slots');
 const schemas = require('./booking.schemas');
 
 const router = express.Router();
@@ -23,15 +23,15 @@ async function accessTo(booking, user) {
   return { isOwner, isProvider };
 }
 
-const dayBookings = (serviceProviderId, day) =>
-  Booking.find({ serviceProviderId, date: day, status: 'upcoming' })
+const dayBookings = (serviceProviderId, day, excludeId) =>
+  Booking.find({ serviceProviderId, date: day, status: 'upcoming', ...(excludeId ? { _id: { $ne: excludeId } } : {}) })
     .select('startTime endTime status')
     .lean();
 
 // GET /api/bookings/slots?serviceProviderId=&serviceId=&date=YYYY-MM-DD
 // Public: a member browsing availability doesn't need to be logged in.
 router.get('/slots', validate({ query: schemas.slotsQuery }), async (req, res) => {
-  const { serviceProviderId, serviceId, date } = req.valid.query;
+  const { serviceProviderId, serviceId, date, excludeBookingId } = req.valid.query;
 
   const provider = await ServiceProvider.findById(serviceProviderId).lean();
   if (!provider) return res.status(404).json({ msg: 'Service provider not found' });
@@ -42,12 +42,15 @@ router.get('/slots', validate({ query: schemas.slotsQuery }), async (req, res) =
   if (!service) return res.status(404).json({ msg: 'Service not found' });
 
   const day = startOfDayUTC(date);
-  const slots = slotsForDay({
+  const slots = dropPastSlots(
+    slotsForDay({
       availability: provider.availability,
       date: day,
       durationMinutes: service.durationMinutes,
-      bookings: await dayBookings(serviceProviderId, day),
-    });
+      bookings: await dayBookings(serviceProviderId, day, excludeBookingId),
+    }),
+    day
+  );
 
   return res.json({ date: day, service, slots });
 });
@@ -68,7 +71,7 @@ router.post('/', authenticate, validate({ body: schemas.create }), async (req, r
   if (!service) return res.status(404).json({ msg: 'Service not found' });
 
   const day = startOfDayUTC(date);
-  if (day.getTime() < startOfDayUTC(new Date()).getTime()) {
+  if (day.getTime() < startOfDayUTC(localISO(new Date())).getTime()) {
     return res.status(400).json({ msg: 'Cannot book a date in the past' });
   }
   if (toMinutes(endTime) <= toMinutes(startTime)) {
@@ -76,12 +79,15 @@ router.post('/', authenticate, validate({ body: schemas.create }), async (req, r
   }
 
   // Validate the slot against the provider's recurring template.
-  const open = slotsForDay({
+  const open = dropPastSlots(
+    slotsForDay({
       availability: provider.availability,
       date: day,
       durationMinutes: toMinutes(endTime) - toMinutes(startTime),
       bookings: await dayBookings(serviceProviderId, day),
-    });
+    }),
+    day
+  );
   if (!open.some((s) => s.start === startTime && s.end === endTime)) {
     return res.status(409).json({ msg: 'That slot is not available for this provider' });
   }
@@ -165,6 +171,66 @@ router.put(
     if (status === 'completed' && timeSpent != null) booking.timeSpent = timeSpent;
 
     await booking.save();
+    return res.json(booking);
+  }
+);
+
+// POST /api/bookings/:id/reschedule: the member moves their own upcoming booking to another open time
+router.post(
+  '/:id/reschedule',
+  authenticate,
+  validate({ params: schemas.idParam, body: schemas.reschedule }),
+  async (req, res) => {
+    const { date, startTime, endTime } = req.valid.body;
+
+    const booking = await Booking.findById(req.valid.params.id);
+    if (!booking) return res.status(404).json({ msg: 'Booking not found' });
+
+    const { isOwner } = await accessTo(booking, req.user);
+    if (!isOwner) return res.status(403).json({ msg: 'Only the member who booked can reschedule' });
+    if (booking.status !== 'upcoming') {
+      return res.status(409).json({ msg: 'Only upcoming bookings can be rescheduled' });
+    }
+
+    const day = startOfDayUTC(date);
+    if (day.getTime() < startOfDayUTC(localISO(new Date())).getTime()) {
+      return res.status(400).json({ msg: 'Cannot move a booking to a date in the past' });
+    }
+    if (toMinutes(endTime) <= toMinutes(startTime)) {
+      return res.status(400).json({ msg: 'endTime must be after startTime' });
+    }
+    const duration = toMinutes(booking.endTime) - toMinutes(booking.startTime);
+    if (toMinutes(endTime) - toMinutes(startTime) !== duration) {
+      return res.status(400).json({ msg: 'The new time must be the same length as the original' });
+    }
+    if (day.getTime() === booking.date.getTime() && startTime === booking.startTime) {
+      return res.status(400).json({ msg: 'That is already your booking time' });
+    }
+
+    const provider = await ServiceProvider.findById(booking.serviceProviderId).lean();
+    if (!provider) return res.status(404).json({ msg: 'Service provider not found' });
+
+    // This booking's own current slot is ignored, so shifting by 30 minutes is allowed.
+    const open = dropPastSlots(
+      slotsForDay({
+        availability: provider.availability,
+        date: day,
+        durationMinutes: duration,
+        bookings: await dayBookings(booking.serviceProviderId, day, booking._id),
+      }),
+      day
+    );
+    if (!open.some((s) => s.start === startTime && s.end === endTime)) {
+      return res.status(409).json({ msg: 'That time is not available for this provider' });
+    }
+
+    booking.reschedules.push({ date: booking.date, startTime: booking.startTime, endTime: booking.endTime, at: new Date() });
+    booking.date = day;
+    booking.startTime = startTime;
+    booking.endTime = endTime;
+    // The unique index decides a race: if someone took the slot meanwhile this fails with a 409.
+    await booking.save();
+
     return res.json(booking);
   }
 );
