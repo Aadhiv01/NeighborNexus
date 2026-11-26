@@ -270,6 +270,7 @@ All routes are prefixed with `/api`.
 | `npm run seed` | Reset and seed demo data |
 | `npm run smoke` | End-to-end API checks against a running API |
 | `npm test` | Unit tests (reminder timing, today and past slots) |
+| `npx playwright test --project=firefox` | The same browser tests in Firefox (also `--project=webkit` for Safari's engine). Install once with `npx playwright install firefox webkit` |
 | `npm run test:e2e` | End-to-end tests in a real browser with axe accessibility checks. They start their own API (4100), client (3002) and `nn_e2e` database. Run `npx playwright install chromium` once first |
 | `npm run check:timeoff` | Time off removes times from every place they are offered, and its notes stay private |
 | `npm run check:reminders` | Reminder sending against a real database, including races |

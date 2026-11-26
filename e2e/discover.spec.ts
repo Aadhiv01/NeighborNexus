@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { chooseOption, expectNoAxeViolations } from "./helpers";
+import { chooseOption, expectNoAxeViolations, pick } from "./helpers";
 
 test.describe("discovery", () => {
   test("every card says when that provider is next free", async ({ page }) => {
@@ -74,7 +74,7 @@ test.describe("near me and the map", () => {
 
   test("the map has a keyboard-reachable pin per located provider", async ({ page }) => {
     await page.goto("/services");
-    await page.getByRole("radio", { name: "Map" }).check({ force: true });
+    await pick(page.getByRole("radio", { name: "Map" }));
     const pins = page.locator('button[aria-label*=", from $"]');
     await expect(pins).toHaveCount(4);
 

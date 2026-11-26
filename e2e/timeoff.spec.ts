@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
-import { MEMBER, PROVIDER, expectNoAxeViolations, toastRegion } from "./helpers";
+import { MEMBER, PROVIDER, expectNoAxeViolations, toastRegion, pick } from "./helpers";
 
 /** The first Monday to Friday at least `from` days ahead, as YYYY-MM-DD in local time. */
 function weekday(from: number) {
@@ -82,7 +82,7 @@ test.describe.serial("a provider's time off", () => {
 
   test("blocking some hours removes only the overlapping times", async () => {
     await block(async () => {
-      await provider.getByRole("radio", { name: "Some hours" }).check({ force: true });
+      await pick(provider.getByRole("radio", { name: "Some hours" }));
       await provider.getByLabel("From").fill("10:00");
       await provider.getByLabel("Until").fill("11:00");
     });
@@ -99,7 +99,7 @@ test.describe.serial("a provider's time off", () => {
 
   test("a bad range is explained, not silently accepted", async () => {
     await block(async () => {
-      await provider.getByRole("radio", { name: "Some hours" }).check({ force: true });
+      await pick(provider.getByRole("radio", { name: "Some hours" }));
       await provider.getByLabel("From").fill("11:00");
       await provider.getByLabel("Until").fill("10:00");
     });
@@ -157,7 +157,7 @@ test.describe.serial("a provider's time off", () => {
       await member.goto("/notifications");
       await expect(member.getByText("Your booking was canceled").first()).toBeVisible();
       await member.goto("/bookings");
-      await member.getByRole("radio", { name: "Past" }).check({ force: true });
+      await pick(member.getByRole("radio", { name: "Past" }));
       await expect(member.getByText("Canceled", { exact: true }).first()).toBeVisible();
 
       await provider.goto("/dashboard/serviceprovider");

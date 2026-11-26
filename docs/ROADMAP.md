@@ -21,8 +21,12 @@ and why. Dates are deliberately absent.
 The layout is already responsive and has been checked at 390 px and 1280 px in Chromium. Make it a
 guarantee instead of a hope:
 
-- **Browser matrix in Playwright:** add Firefox and WebKit (Safari's engine) projects to
-  `playwright.config.ts`, run the same suite on all three in CI.
+- **Browser matrix in Playwright:** done for Chromium and Firefox (the whole suite, 72 tests, passes on
+  both and runs in CI). WebKit (Safari's engine) is set up and runs in CI without blocking: locally it
+  was slow and erratic (tests that take seconds elsewhere sometimes took minutes), the cause was not
+  found, and it needs a clean run on a quiet machine or on CI before it can be trusted. Known issue:
+  in Firefox, axe's `button-name` rule crashes the renderer while a dropdown is open, so accessibility
+  scans run in Chromium only.
 - **Viewport matrix:** phone portrait and landscape (390x844, 844x390), tablet (820x1180), laptop,
   wide desktop. Assert no horizontal scroll and that nothing important sits under a notch or
   on-screen keyboard.

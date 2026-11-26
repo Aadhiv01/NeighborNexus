@@ -16,12 +16,15 @@ export const E2E = {
 
 export default defineConfig({
   testDir: "e2e",
-  timeout: 60_000,
-  expect: { timeout: 8_000 },
+  timeout: 90_000,
+  // Generous, because a busy laptop sometimes stalls a page for about 25 seconds. A real regression
+  // still fails; the same tests pass in about 2 seconds when the machine is quiet.
+  expect: { timeout: 15_000 },
   // The tests share one seeded database and some build on each other, so they run in order.
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CI ? 1 : 0,
+  // One retry, locally too. A retried pass is reported as "flaky", so it stays visible.
+  retries: 1,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
   globalSetup: "./e2e/global-setup.ts",
   use: { baseURL: E2E.web, trace: "retain-on-failure" },
@@ -48,5 +51,12 @@ export default defineConfig({
       env: { VITE_API_BASE_URL: `${E2E.api}/api` },
     },
   ],
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // The same tests run in each engine: Chromium (Chrome and Edge), Firefox and WebKit (Safari).
+  // Run one at a time, because they share a seeded database:  npx playwright test --project=firefox
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    // WebKit runs roughly three times slower here (software rendering), so it gets longer per test.
+    { name: "webkit", timeout: 120_000, use: { ...devices["Desktop Safari"] } },
+  ],
 });

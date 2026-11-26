@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
-import { MEMBER, PROVIDER, chooseDayWithSlots, toastRegion } from "./helpers";
+import { MEMBER, PROVIDER, chooseDayWithSlots, toastRegion, pick } from "./helpers";
 
 /** Reads the "N unread." line on the Updates page. */
 async function unreadCount(page: Page) {
@@ -33,7 +33,7 @@ test.describe.serial("a booking from start to finish, with both people kept info
     await expect(member.getByRole("heading", { name: "Book a service" })).toBeVisible();
     // Two days ahead, so the booking is well outside the 12 hour reschedule cutoff.
     await chooseDayWithSlots(member, "book", 3, 2);
-    await member.locator('input[name="book-slot"]').first().check({ force: true });
+    await pick(member.locator('input[name="book-slot"]').first());
     await member.getByRole("button", { name: /^Confirm/ }).click();
     await expect(member.getByText("Booked", { exact: true })).toBeVisible();
   });
@@ -47,7 +47,7 @@ test.describe.serial("a booking from start to finish, with both people kept info
 
     // Nothing to confirm until a different time is chosen.
     await expect(member.getByRole("button", { name: "Choose a new time" })).toBeDisabled();
-    await member.locator('input[name="move-slot"]').nth(1).check({ force: true });
+    await pick(member.locator('input[name="move-slot"]').nth(1));
     await expect(member.getByText("Moving to:")).toBeVisible();
     await member.getByRole("button", { name: /^Move to/ }).click();
 
@@ -91,7 +91,7 @@ test.describe.serial("a booking from start to finish, with both people kept info
     await member.goto("/services");
     await member.locator("a", { hasText: "Maya Chen" }).click();
     await chooseDayWithSlots(member, "book", 2);
-    await member.locator('input[name="book-slot"]').first().check({ force: true });
+    await pick(member.locator('input[name="book-slot"]').first());
     await member.getByRole("button", { name: /^Confirm/ }).click();
     await expect(member.getByText("Booked", { exact: true })).toBeVisible();
 
