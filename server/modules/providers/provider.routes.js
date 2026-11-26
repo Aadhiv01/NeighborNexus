@@ -212,6 +212,79 @@ router.post('/availability', authenticate, validate({ body: schemas.availability
   return res.json(provider.availability);
 });
 
+// ─── Time off (blocked days and hours) ──────────────────────────────────────
+// GET /api/serviceprovider/time-off: what is blocked from today on
+router.get('/time-off', authenticate, async (req, res) => {
+  const provider = await requireProvider(req, res);
+  if (!provider) return;
+  const today = localISO(new Date());
+  const upcoming = provider.timeOff.filter((t) => t.endDate >= today).sort((a, b) => a.startDate.localeCompare(b.startDate));
+  return res.json(upcoming);
+});
+
+/** Upcoming bookings that fall inside a time off entry (any time of the day if it has no hours). */
+async function bookingsInside(provider, entry) {
+  const found = await Booking.find({
+    serviceProviderId: provider._id,
+    status: 'upcoming',
+    date: { $gte: startOfDayUTC(entry.startDate), $lte: startOfDayUTC(entry.endDate) },
+  }).populate('user', 'name').lean();
+  if (!entry.startTime) return found;
+  return found.filter((b) => toMinutes(b.startTime) < toMinutes(entry.endTime) && toMinutes(b.endTime) > toMinutes(entry.startTime));
+}
+
+// POST /api/serviceprovider/time-off
+// If bookings already sit inside the time, nothing is saved until the provider says what to do with
+// them: `bookings: "keep"` leaves them, `"cancel"` cancels them and tells each member.
+router.post('/time-off', authenticate, validate({ body: schemas.timeOff }), async (req, res) => {
+  const provider = await requireProvider(req, res);
+  if (!provider) return;
+
+  const { bookings: decision, endDate, note, ...rest } = req.valid.body;
+  const entry = { ...rest, endDate: endDate ?? rest.startDate, note };
+  if (entry.endDate < localISO(new Date())) {
+    return res.status(400).json({ msg: 'That time is already in the past' });
+  }
+
+  const inside = await bookingsInside(provider, entry);
+  if (inside.length && !decision) {
+    return res.status(409).json({
+      msg: `${inside.length} ${inside.length === 1 ? 'booking is' : 'bookings are'} already booked in that time. Choose whether to keep or cancel them.`,
+      conflicts: inside.map((b) => ({
+        _id: b._id, date: b.date, startTime: b.startTime, endTime: b.endTime,
+        serviceName: b.serviceName, member: b.user?.name ?? 'A member',
+      })),
+    });
+  }
+
+  provider.timeOff.push(entry);
+  await provider.save();
+
+  let canceled = 0;
+  if (decision === 'cancel') {
+    for (const b of inside) {
+      const booking = await Booking.findOneAndUpdate({ _id: b._id, status: 'upcoming' }, { $set: cancelInfo(b, 'provider') }, { new: true });
+      if (!booking) continue; // changed in the meantime
+      canceled += 1;
+      notifyBooking(booking, 'canceled', { by: 'provider' });
+    }
+  }
+  live.publish(provider._id, {});
+  return res.status(201).json({ timeOff: provider.timeOff[provider.timeOff.length - 1], canceled, kept: decision === 'keep' ? inside.length : 0 });
+});
+
+// DELETE /api/serviceprovider/time-off/:timeOffId
+router.delete('/time-off/:timeOffId', authenticate, validate({ params: schemas.timeOffIdParam }), async (req, res) => {
+  const provider = await requireProvider(req, res);
+  if (!provider) return;
+  const entry = provider.timeOff.id(req.valid.params.timeOffId);
+  if (!entry) return res.status(404).json({ msg: 'Time off not found' });
+  entry.deleteOne();
+  await provider.save();
+  live.publish(provider._id, {});
+  return res.json({ msg: 'Time off removed' });
+});
+
 // ─── Provider-side bookings ────────────────────────────────────────────────
 router.get('/bookings', authenticate, async (req, res) => {
   const provider = await requireProvider(req, res);

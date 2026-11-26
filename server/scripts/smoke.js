@@ -334,6 +334,73 @@ async function main() {
     check('stats carry nothing about individual people or bookings', !JSON.stringify(st.data).match(/email|userId|"user"|password/i));
   }
 
+  // ── provider time off through the API ─────────────────────────────────
+  {
+    const provTok = (await api('/api/auth', { method: 'POST', body: { email: 'maya@example.com', password: 'password123' } })).data.token;
+    const danielTok = (await api('/api/auth', { method: 'POST', body: { email: 'daniel@example.com', password: 'password123' } })).data.token;
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const local = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+    const slotsOn = async (date) => (await api(`/api/bookings/slots?serviceProviderId=${provider._id}&serviceId=${serviceId}&date=${date}`)).data.slots;
+    const days = [];
+    for (let i = 3; i <= 20 && days.length < 2; i += 1) if ((await slotsOn(local(i))).length > 3) days.push(local(i));
+    const [dayA, dayB] = days;
+    const post = (body, token = provTok) => api('/api/serviceprovider/time-off', { method: 'POST', token, body });
+    const made = [];
+
+    check('time off needs a valid range and hours', [
+      (await post({ startDate: local(-1) })).status,
+      (await post({ startDate: dayB, endDate: dayA })).status,
+      (await post({ startDate: dayA, endDate: local(25), startTime: '09:00', endTime: '10:00' })).status,
+      (await post({ startDate: dayA, startTime: '09:00' })).status,
+      (await post({ startDate: dayA, startTime: '10:00', endTime: '09:00' })).status,
+      (await post({ startDate: 'not-a-date' })).status,
+    ].every((c) => c === 400));
+    check('only a provider can set time off', (await post({ startDate: dayA }, memberToken)).status === 403);
+    check('a signed out visitor cannot set time off', (await api('/api/serviceprovider/time-off', { method: 'POST', body: { startDate: dayA } })).status === 401);
+
+    const off = await post({ startDate: dayA, note: 'Private: holiday' });
+    check('a provider can block a whole day', off.status === 201 && off.data.canceled === 0);
+    const offId = off.data?.timeOff?._id;
+    if (offId) made.push(offId);
+    check('that day then has no open times', (await slotsOn(dayA)).length === 0);
+    const listed = await api('/api/serviceprovider/time-off', { token: provTok });
+    check('the provider sees their time off, with the private note', listed.data.some((t) => t._id === offId && t.note === 'Private: holiday'));
+    check('another provider cannot remove it', (await api(`/api/serviceprovider/time-off/${offId}`, { method: 'DELETE', token: danielTok })).status === 404);
+    check('a member cannot remove it', (await api(`/api/serviceprovider/time-off/${offId}`, { method: 'DELETE', token: memberToken })).status === 403);
+    check('removing it brings the times back', (await api(`/api/serviceprovider/time-off/${offId}`, { method: 'DELETE', token: provTok })).status === 200 && (await slotsOn(dayA)).length > 3);
+    made.pop();
+
+    // Bookings already inside the time off: the provider must choose.
+    const open = await slotsOn(dayB);
+    const bookBody = { serviceProviderId: provider._id, serviceId, date: dayB, startTime: open[0].start, endTime: open[0].end };
+    const mine = await api('/api/bookings', { method: 'POST', token: memberToken, body: bookBody });
+    check('a member books a time that will later be blocked', mine.status === 201);
+    const refused = await post({ startDate: dayB });
+    check('blocking a day with a booking is refused until the provider chooses, and lists it',
+      refused.status === 409 && refused.data.conflicts?.length === 1 && refused.data.conflicts[0].member);
+    check('nothing was saved by the refused request', !(await api('/api/serviceprovider/time-off', { token: provTok })).data.some((t) => t.startDate === dayB));
+
+    const kept = await post({ startDate: dayB, bookings: 'keep' });
+    if (kept.data?.timeOff?._id) made.push(kept.data.timeOff._id);
+    const stillThere = (await api('/api/bookings', { token: memberToken })).data.find((b) => b._id === mine.data._id);
+    check('"keep" blocks the day but leaves the booking upcoming', kept.status === 201 && kept.data.kept === 1 && stillThere?.status === 'upcoming');
+    await api(`/api/serviceprovider/time-off/${kept.data.timeOff._id}`, { method: 'DELETE', token: provTok });
+    made.pop();
+
+    const cancelled = await post({ startDate: dayB, bookings: 'cancel' });
+    if (cancelled.data?.timeOff?._id) made.push(cancelled.data.timeOff._id);
+    await wait(400);
+    const after = (await api('/api/bookings', { token: memberToken })).data.find((b) => b._id === mine.data._id);
+    check('"cancel" cancels the booking and records the provider as the one who did',
+      cancelled.status === 201 && cancelled.data.canceled === 1 && after?.status === 'canceled' && after?.canceledBy === 'provider');
+    const inbox = await api('/api/notifications', { token: memberToken });
+    check('the member is told it was canceled', inbox.data.items.some((n) => n.type === 'booking_canceled' && n.booking === mine.data._id));
+    check('the blocked day offers no times', (await slotsOn(dayB)).length === 0);
+
+    for (const id of made) await api(`/api/serviceprovider/time-off/${id}`, { method: 'DELETE', token: provTok });
+    check('removing the time off restores the day', (await slotsOn(dayB)).length > 3);
+  }
+
   // ── next available and near me ────────────────────────────────────────
   const withNext = providers.data.filter((p) => p.nextAvailable);
   check(

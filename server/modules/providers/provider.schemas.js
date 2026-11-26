@@ -24,6 +24,31 @@ const availability = z.object({
   ),
 });
 
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Dates must look like 2026-12-24').refine((v) => !Number.isNaN(Date.parse(v)), 'That is not a real date');
+
+// A whole day or run of days, or one window on one day. What to do about bookings already inside it
+// is a separate, explicit choice.
+const timeOff = z
+  .object({
+    startDate: isoDay,
+    endDate: isoDay.optional(),
+    startTime: hhmm('startTime must be HH:mm').optional(),
+    endTime: hhmm('endTime must be HH:mm').optional(),
+    note: z.string().trim().max(200).default(''),
+    bookings: z.enum(['keep', 'cancel']).optional(),
+  })
+  .superRefine((v, ctx) => {
+    const end = v.endDate ?? v.startDate;
+    if (end < v.startDate) ctx.addIssue({ code: 'custom', message: 'The last day cannot be before the first day' });
+    if (Boolean(v.startTime) !== Boolean(v.endTime)) ctx.addIssue({ code: 'custom', message: 'Give both a start and an end time, or neither' });
+    if (v.startTime && v.endTime) {
+      if (end !== v.startDate) ctx.addIssue({ code: 'custom', message: 'Hours can only be blocked on a single day' });
+      if (v.endTime <= v.startTime) ctx.addIssue({ code: 'custom', message: 'The end time must be after the start time' });
+    }
+  });
+
+const timeOffIdParam = z.object({ timeOffId: objectId('Invalid time off id') });
+
 const searchQuery = z
   .object({
     category: z.string().trim().optional(),
@@ -64,6 +89,8 @@ const profile = z.object({
 });
 
 module.exports = {
+  timeOff,
+  timeOffIdParam,
   service,
   serviceUpdate,
   serviceIdParam,
