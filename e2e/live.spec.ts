@@ -89,3 +89,44 @@ test("if the page has not caught up yet, confirming a taken time is refused with
   await request.delete(`http://localhost:4100/api/bookings/${(await taken.json())._id}`, { headers: { Authorization: `Bearer ${sam.token}` } });
   await ctx.close();
 });
+
+test("the live connection is only held while the tab is visible", async ({ browser }) => {
+  const ctx = await browser.newContext({ storageState: MEMBER });
+  const page = await ctx.newPage();
+  // Count the live connections that are currently open.
+  await page.addInitScript(() => {
+    const w = window as unknown as { __open: number };
+    w.__open = 0;
+    const Real = window.EventSource;
+    window.EventSource = class extends Real {
+      constructor(url: string | URL, init?: EventSourceInit) {
+        super(url, init);
+        w.__open += 1;
+        const close = this.close.bind(this);
+        let closed = false;
+        this.close = () => { if (!closed) { closed = true; w.__open -= 1; } close(); };
+      }
+    } as typeof EventSource;
+  });
+  const open = () => page.evaluate(() => (window as unknown as { __open: number }).__open);
+  const setVisibility = (state: "hidden" | "visible") =>
+    page.evaluate((s) => {
+      Object.defineProperty(document, "visibilityState", { value: s, configurable: true });
+      document.dispatchEvent(new Event("visibilitychange"));
+    }, state);
+
+  await page.goto("/services");
+  await page.locator("a", { hasText: "Maya Chen" }).click();
+  await expect(page.getByText("Updating live")).toBeVisible();
+  expect(await open()).toBe(1);
+
+  await setVisibility("hidden");
+  expect(await open()).toBe(0);
+
+  await setVisibility("visible");
+  await expect(page.getByText("Updating live")).toBeVisible();
+  expect(await open()).toBe(1);
+
+  await page.goto("/services");
+  await ctx.close();
+});
