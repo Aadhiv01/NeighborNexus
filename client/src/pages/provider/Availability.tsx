@@ -6,6 +6,7 @@ import Page from "../../layout/Page";
 import { Card, PageHeader } from "../../ui/Display";
 import { Button } from "../../ui/Button";
 import { Skeleton, useToast } from "../../ui/Feedback";
+import TimeOffSection from "./TimeOff";
 import { PlusIcon, TrashIcon } from "../../ui/Icons";
 
 /**
@@ -119,11 +120,19 @@ export default function ProviderAvailability() {
     <Page title="Availability">
       <PageHeader
         eyebrow="Availability"
-        title="Weekly availability"
-        subtitle="Members can only book inside these hours. A day with no hours is unbookable."
-        actions={<Button variant="secondary" onClick={applyWeekdays}>Set weekdays 9 to 5</Button>}
+        title="Availability"
+        subtitle="Your weekly hours, and any time off. Members can only book inside your hours and outside your time off."
       />
 
+      <TimeOffSection />
+
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="m-0 font-display text-2xl font-semibold">Weekly hours</h2>
+          <p className="m-0 text-ink-soft">A day with no hours is unbookable.</p>
+        </div>
+        <Button variant="secondary" onClick={applyWeekdays}>Set weekdays 9 to 5</Button>
+      </div>
       {isPending ? (
         <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-20 rounded-card" />)}</div>
       ) : (

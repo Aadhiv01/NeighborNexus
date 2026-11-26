@@ -8,6 +8,7 @@ and why. Dates are deliberately absent.
 - ~~Landing page for signed-out visitors~~ Done: concept A (editorial scroll story) is the home page at `/`.
   Later: a short interactive preview of weekly hours and next free time for providers, once there is
   real supply to show.
+- ~~Time off for providers~~ Done (blocked days and hours, with a keep-or-cancel choice for bookings already inside).
 - "Request and confirm" mode: a provider can approve bookings before they count.
 - Timezones. Times are stored as plain `HH:mm`, so reminders, "next free" and the reschedule cutoff
   assume the server and provider share a zone. Fix: store the provider's IANA zone, keep instants in

@@ -160,6 +160,12 @@ assumes the server and providers share a timezone.
 **"Today" is the local calendar date.** Comparing against the UTC date told evening users in western
 timezones that today had already passed; past times earlier today are also no longer offered.
 
+**Time off is subtracted like a booking, not stored as slots.** A provider blocks calendar days or one
+window of hours; the slot calculation removes them with the weekly hours and the day's bookings, so the
+same rule applies to the slots list, booking, rescheduling, "next free" and the public stats. If
+bookings already sit in the time, the server refuses and lists them until the provider chooses to keep
+them or cancel them and tell each member. Notes on time off are private and never leave the API.
+
 **Cancelling frees the slot.** Because the index is partial, a booking that
 moves to `canceled` or `completed` no longer occupies the slot.
 
@@ -224,6 +230,9 @@ All routes are prefixed with `/api`.
 | `DELETE` | `/services/:serviceId` | provider | Delete a service |
 | `GET` | `/availability` | provider | Read weekly template |
 | `POST` | `/availability` | provider | Replace a day's slots |
+| `GET` | `/time-off` | provider | Blocked days and hours from today on |
+| `POST` | `/time-off` | provider | Block a day, a run of days or some hours. Refused with the affected bookings listed (409) until `bookings` is `keep` or `cancel` |
+| `DELETE` | `/time-off/:timeOffId` | provider | Remove time off |
 | `GET` | `/bookings` | provider | Incoming bookings |
 | `PUT` | `/bookings/:bookingId` | provider | Update booking status |
 | `GET` | `/profile` | provider | Own profile |
@@ -262,6 +271,7 @@ All routes are prefixed with `/api`.
 | `npm run smoke` | End-to-end API checks against a running API |
 | `npm test` | Unit tests (reminder timing, today and past slots) |
 | `npm run test:e2e` | End-to-end tests in a real browser with axe accessibility checks. They start their own API (4100), client (3002) and `nn_e2e` database. Run `npx playwright install chromium` once first |
+| `npm run check:timeoff` | Time off removes times from every place they are offered, and its notes stay private |
 | `npm run check:reminders` | Reminder sending against a real database, including races |
 | `npm run reminders` | Send due reminders once and exit (for cron, when the web process runs with `REMINDERS=off`) |
 | `npm --prefix client run dev` | Client dev server (port 3001) |

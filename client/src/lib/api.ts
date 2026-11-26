@@ -12,6 +12,8 @@ import type {
   Slot,
   SlotsResponse,
   Stats,
+  TimeOff,
+  TimeOffConflict,
   User,
   Weekday,
 } from "./types";
@@ -31,6 +33,10 @@ http.interceptors.request.use((config) => {
 
 /** True when the server refused because the time was taken (409). */
 export const isConflict = (err: unknown) => isAxiosError(err) && err.response?.status === 409;
+
+/** Bookings that stand in the way of blocking time off, when the server refuses until the provider chooses. */
+export const conflictsOf = (err: unknown): TimeOffConflict[] =>
+  isAxiosError(err) && err.response?.status === 409 ? ((err.response.data as { conflicts?: TimeOffConflict[] }).conflicts ?? []) : [];
 
 /** The server answers errors as { msg }. Prefer that over axios's generic text. */
 export function errorMessage(err: unknown, fallback = "Something went wrong. Please try again.") {
@@ -57,6 +63,7 @@ export const qk = {
   providerProfile: ["providerProfile"] as const,
   services: ["services"] as const,
   availability: ["availability"] as const,
+  timeOff: ["timeOff"] as const,
   notifications: ["notifications"] as const,
 };
 
@@ -140,6 +147,16 @@ export const api = {
   deleteService: async (id: string) => (await http.delete(`/serviceprovider/services/${id}`)).data,
 
   availability: () => get<DayAvailability[]>("/serviceprovider/availability"),
+  timeOff: () => get<TimeOff[]>("/serviceprovider/time-off"),
+  addTimeOff: async (body: {
+    startDate: string;
+    endDate?: string;
+    startTime?: string;
+    endTime?: string;
+    note?: string;
+    bookings?: "keep" | "cancel";
+  }) => (await http.post<{ timeOff: TimeOff; canceled: number; kept: number }>("/serviceprovider/time-off", body)).data,
+  removeTimeOff: async (id: string) => (await http.delete(`/serviceprovider/time-off/${id}`)).data,
   saveDay: async (day: Weekday, slots: Slot[]) =>
     (await http.post<DayAvailability[]>("/serviceprovider/availability", { day, slots })).data,
 };

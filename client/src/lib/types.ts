@@ -129,6 +129,25 @@ export interface ServiceInput {
   durationMinutes: number;
 }
 
+export interface TimeOff {
+  _id: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string;
+  startTime?: string;
+  endTime?: string;
+  /** Private: only the provider ever receives this. */
+  note?: string;
+}
+
+export interface TimeOffConflict {
+  _id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  serviceName?: string;
+  member: string;
+}
+
 export interface Stats {
   providers: number;
   categories: { name: string; providers: number; minPrice: number; avgPrice: number; maxPrice: number }[];
