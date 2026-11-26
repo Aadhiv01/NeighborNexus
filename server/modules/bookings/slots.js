@@ -28,11 +28,12 @@ const startOfDayUTC = (value) => {
 const weekdayOf = (date) => WEEKDAYS[new Date(date).getUTCDay()];
 
 /**
- * Availability is a recurring weekly template. Bookings consume a specific
- * date, so free slots are derived — never mutated in place.
+ * Availability is a recurring weekly template. Bookings and time off consume a
+ * specific date, so free slots are derived, never mutated in place.
  */
 function slotsForDay({
   availability = [],
+  timeOff = [],
   date,
   durationMinutes = 60,
   stepMinutes = 30,
@@ -42,9 +43,18 @@ function slotsForDay({
   const entry = availability.find((a) => String(a.day).toLowerCase() === day);
   if (!entry) return [];
 
-  const busy = bookings
-    .filter((b) => b.status !== 'canceled')
-    .map((b) => ({ start: toMinutes(b.startTime), end: toMinutes(b.endTime) }));
+  // Time off the provider has blocked. An entry with no times blocks the whole day (or a run of
+  // days, startDate to endDate inclusive). An entry with times blocks just that window.
+  const dateStr = new Date(date).toISOString().slice(0, 10);
+  const off = timeOff.filter((t) => t.startDate <= dateStr && dateStr <= t.endDate);
+  if (off.some((t) => !t.startTime)) return [];
+
+  const busy = [
+    ...bookings
+      .filter((b) => b.status !== 'canceled')
+      .map((b) => ({ start: toMinutes(b.startTime), end: toMinutes(b.endTime) })),
+    ...off.map((t) => ({ start: toMinutes(t.startTime), end: toMinutes(t.endTime) })),
+  ];
 
   const slots = [];
 
