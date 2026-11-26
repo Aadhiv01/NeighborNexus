@@ -18,7 +18,7 @@ const round1 = (n) => Math.round(n * 10) / 10;
  * turn into a busy database.
  */
 async function compute() {
-  const providers = await ServiceProvider.find({}).select('services availability').lean();
+  const providers = await ServiceProvider.find({}).select('services availability timeOff').lean();
 
   const byCategory = new Map();
   for (const p of providers) {
@@ -66,7 +66,7 @@ async function compute() {
     for (const p of providers) {
       const duration = p.services.length ? Math.min(...p.services.map((s) => s.durationMinutes || 60)) : 60;
       const open = dropPastSlots(
-        slotsForDay({ availability: p.availability, date: day, durationMinutes: duration, bookings: byDay.get(`${p._id}|${dateStr}`) || [] }),
+        slotsForDay({ availability: p.availability, timeOff: p.timeOff, date: day, durationMinutes: duration, bookings: byDay.get(`${p._id}|${dateStr}`) || [] }),
         day
       );
       slots += open.length;

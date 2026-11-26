@@ -60,7 +60,7 @@ router.get('/', validate({ query: schemas.searchQuery }), async (req, res) => {
   }
 
   const fields =
-    'userId name profilePicture bio services availability rating location experience availableForEmergency geo';
+    'userId name profilePicture bio services availability timeOff rating location experience availableForEmergency geo';
 
   let providers;
   if (lat !== undefined) {
@@ -80,7 +80,7 @@ router.get('/', validate({ query: schemas.searchQuery }), async (req, res) => {
       { $limit: 50 },
       {
         $project: {
-          userId: 1, name: 1, profilePicture: 1, bio: 1, services: 1, availability: 1, rating: 1,
+          userId: 1, name: 1, profilePicture: 1, bio: 1, services: 1, availability: 1, timeOff: 1, rating: 1,
           location: 1, experience: 1, availableForEmergency: 1, geo: 1, distanceMeters: 1,
         },
       },
@@ -108,12 +108,13 @@ router.get('/', validate({ query: schemas.searchQuery }), async (req, res) => {
     byProviderDay.get(key).push(b);
   }
 
-  const result = providers.map(({ availability, ...p }) => {
+  const result = providers.map(({ availability, timeOff, ...p }) => {
     const durations = p.services.map((s) => s.durationMinutes || 60);
     return {
       ...p,
       nextAvailable: nextOpenSlot({
         availability,
+        timeOff,
         durationMinutes: durations.length ? Math.min(...durations) : 60,
         bookingsFor: (dateStr) => byProviderDay.get(`${p._id}|${dateStr}`) || [],
         days: DAYS,
@@ -261,7 +262,8 @@ router.get('/profile', authenticate, async (req, res) => {
 // GET /api/serviceprovider/profile/:userId: public profile
 router.get('/profile/:userId', validate({ params: schemas.userIdParam }), async (req, res) => {
   const provider = await ServiceProvider.findOne({ userId: req.valid.params.userId })
-    .select('-reviews.customer')
+    // Time off carries the provider's private notes, so it never goes out publicly.
+    .select('-reviews.customer -timeOff')
     .lean();
   if (!provider) return res.status(404).json({ msg: 'Profile not found' });
   return res.json(provider);

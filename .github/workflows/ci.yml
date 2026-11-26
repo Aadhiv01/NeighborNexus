@@ -41,6 +41,7 @@ jobs:
       - run: npm run smoke
       - run: npm run check:reminders
       - run: npm run check:policies
+      - run: npm run check:timeoff
 
   client:
     name: Client (types, build)

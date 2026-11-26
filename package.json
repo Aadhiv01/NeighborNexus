@@ -14,7 +14,8 @@
     "check:reminders": "node server/scripts/check-reminders.js",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "check:policies": "node server/scripts/check-policies.js"
+    "check:policies": "node server/scripts/check-policies.js",
+    "check:timeoff": "node server/scripts/check-timeoff.js"
   },
   "keywords": [],
   "author": "",

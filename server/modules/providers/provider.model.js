@@ -24,6 +24,16 @@ const AvailabilitySchema = new mongoose.Schema(
   { _id: false }
 );
 
+// Days or hours the provider has blocked, for a holiday, a sick day or anything else. Dates are plain
+// calendar days (YYYY-MM-DD, inclusive). With no times it blocks the whole day or run of days.
+const TimeOffSchema = new mongoose.Schema({
+    startDate: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
+    endDate: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
+    startTime: { type: String, match: /^([01]\d|2[0-3]):[0-5]\d$/ },
+    endTime: { type: String, match: /^([01]\d|2[0-3]):[0-5]\d$/ },
+    note: { type: String, default: '', maxlength: 200 }, // private, only the provider sees it
+});
+
 const ReviewSchema = new mongoose.Schema(
   {
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -78,6 +88,7 @@ const ServiceProviderSchema = new mongoose.Schema(
     experience: { type: Number, default: 0, min: 0 },
     services: { type: [ServiceSchema], default: [] },
     availability: { type: [AvailabilitySchema], default: [] },
+    timeOff: { type: [TimeOffSchema], default: [] },
     rating: { type: Number, default: 0, min: 0, max: 5 },
     reviews: { type: [ReviewSchema], default: [] },
     socialLinks: {

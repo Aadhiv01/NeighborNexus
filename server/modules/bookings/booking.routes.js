@@ -54,6 +54,7 @@ router.get('/slots', validate({ query: schemas.slotsQuery }), async (req, res) =
   const slots = dropPastSlots(
     slotsForDay({
       availability: provider.availability,
+      timeOff: provider.timeOff,
       date: day,
       durationMinutes: service.durationMinutes,
       bookings: await dayBookings(serviceProviderId, day, excludeBookingId),
@@ -91,6 +92,7 @@ router.post('/', authenticate, validate({ body: schemas.create }), async (req, r
   const open = dropPastSlots(
     slotsForDay({
       availability: provider.availability,
+      timeOff: provider.timeOff,
       date: day,
       durationMinutes: toMinutes(endTime) - toMinutes(startTime),
       bookings: await dayBookings(serviceProviderId, day),
@@ -240,6 +242,7 @@ router.post(
     const open = dropPastSlots(
       slotsForDay({
         availability: provider.availability,
+      timeOff: provider.timeOff,
         date: day,
         durationMinutes: duration,
         bookings: await dayBookings(booking.serviceProviderId, day, booking._id),

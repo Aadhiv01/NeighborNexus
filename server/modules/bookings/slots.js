@@ -84,13 +84,14 @@ const localISO = (d) =>
  * returns that day's upcoming bookings. Times are compared in the server's
  * local time, which assumes providers and the server share a timezone.
  */
-function nextOpenSlot({ availability = [], durationMinutes = 60, bookingsFor, now = new Date(), days = 14 }) {
+function nextOpenSlot({ availability = [], timeOff = [], durationMinutes = 60, bookingsFor, now = new Date(), days = 14 }) {
   for (let i = 0; i < days; i += 1) {
     const d = new Date(now);
     d.setDate(d.getDate() + i);
     const dateStr = localISO(d);
     let slots = slotsForDay({
       availability,
+      timeOff,
       date: startOfDayUTC(dateStr),
       durationMinutes,
       bookings: bookingsFor(dateStr),
